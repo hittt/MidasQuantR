@@ -2,6 +2,8 @@
 # Mixed Frequency Function
 #-------------
 #' @export MixedFreqQuant
+#' @useDynLib MidasQuantR
+#' @importFrom Rcpp sourceCpp evalCpp
 #-------------
 MixedFreqQuant <- function(DataY,DataYdate,DataX,DataXdate,xlag,period,ovlap = NULL){
   if(is.null(ovlap)) ovlap = TRUE
@@ -66,3 +68,5 @@ MixedFreqQuant <- function(DataY,DataYdate,DataX,DataXdate,xlag,period,ovlap = N
                  EstX = EstX, EstXdate = as.Date.numeric(EstXdate,origin = "1970-01-01"),
                  EstStart = estStart, EstEnd = estEnd)
 }
+
+.onUnload <- function (libpath) { library.dynam.unload("MidasQuantR", libpath)}
