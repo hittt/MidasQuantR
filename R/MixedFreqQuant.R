@@ -3,6 +3,8 @@
 #-------------
 #' @export MixedFreqQuant
 #' @useDynLib MidasQuantR
+#' @import dplyr
+#' @import pracma
 #' @importFrom Rcpp sourceCpp evalCpp
 #-------------
 MixedFreqQuant <- function(DataY,DataYdate,DataX,DataXdate,xlag,period,ovlap = NULL){
