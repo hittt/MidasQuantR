@@ -16,7 +16,6 @@ condQuantileC <- function(params, yr, Xr, beta2para = FALSE) {
     .Call('_MidasQuantR_condQuantileC', PACKAGE = 'MidasQuantR', params, yr, Xr, beta2para)
 }
 
-#' @export
 GetIniParamsC <- function(yr, Xr, q, numInitialsRand = 10000L, numInitials = 10L, beta2para = FALSE) {
     .Call('_MidasQuantR_GetIniParamsC', PACKAGE = 'MidasQuantR', yr, Xr, q, numInitialsRand, numInitials, beta2para)
 }
