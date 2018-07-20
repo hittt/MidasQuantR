@@ -37,33 +37,26 @@
   
   # In case of non-converge: Reoptimize with the SecondSolver completely
   if(retval$convergence == 1){
+    warning("\nMidasQuantile : MainSolver fails, switching to the SecondSolver..\n")
     retval = switch(SecondSolver,
                      optim = .msoptim(betaIni, fun, control, lb, ub, y, x, q, beta2para),
                      ucminf = .msucminf(betaIni, fun, control, y, x, q, beta2para),
                      nlminb = .msnlminb(betaIni, fun, control, lb, ub, y, x, q, beta2para),
                      bobyqa = .msbobyqa(betaIni, fun, control, lb, ub, y, x, q, beta2para))
     if(retval$convergence == 1){
-      retval = list()
-      retval$value = NA
-      retval$convergence = 1
-      retval$pars = rep(NA, numPars)
-      warning("\nMidasQuantile : Both two solvers fail..\n")
+      warning("\nMidasQuantile : Both Solvers fail..\n")
     }
   }
-  
   # In case of converge but violate bounds, reoptimize with the second optimizer with the 
   # stating parameters inherit from the first round
   if(sum(retval$par > lb) != numPars ||  sum(retval$par < ub) != numPars){
+    warning("\nMidasQuantile : MainSolver convergence violate bounds, switching to the SecondSolver..\n")
     for(i in 1:dim(betaIni[1])) betaIni[i,] = retval$par
     retval = switch(SecondSolver,
                     optim = .msoptim(betaIni, fun, control, lb, ub, y, x, q, beta2para),
                     nlminb = .msnlminb(betaIni, fun, control, lb, ub, y, x, q, beta2para),
                     bobyqa = .msbobyqa(betaIni, fun, control, lb, ub, y, x, q, beta2para))
     if(retval$convergence == 1){
-      retval = list()
-      retval$value = NA
-      retval$convergence = 1
-      retval$pars = rep(NA, numPars)
       warning("\nMidasQuantile : Second solver fails to converge..\n")
     }
   }
@@ -96,14 +89,9 @@
   if (inherits(ans, "try-error")) {
     sol = list()
     sol$convergence = 1
-    sol$message = ans
-    sol$pars = rep(NA, length(pars))
   }
   else{
     sol = ans
-    sol$pars = ans$par
-    names(sol$pars) = names(pars)
-    sol$par = NULL
   }
   return(sol = sol)
 }
@@ -115,10 +103,6 @@
   if (inherits(ans, "try-error")) {
     sol = list()
     sol$convergence = 1
-    sol$message = ans
-    sol$pars = rep(NA, length(pars))
-    names(sol$par) = names(pars)
-    hess = NULL
   }
   else{
     sol = ans
@@ -140,15 +124,11 @@ return(sol)
   if (inherits(ans, "try-error")) {
     sol = list()
     sol$convergence = 1
-    sol$message = ans$message
-    sol$pars = rep(NA, length(pars))
-    hess = NULL
   }
   else{
     sol = ans
-    sol$convergence = ans$convergence
   }
-  return(sol = sol)
+  return(sol)
 }
 
 .bobyqasolver = function(pars, fun, control, lb, ub, y, x, q, beta2para){
@@ -158,17 +138,18 @@ return(sol)
                yr = y, Xr = x, q = q, beta2para = beta2para)
   if (inherits(ans, "try-error")) {
     sol = list()
-    sol$ierr = 1
-    sol$message = ans$msg
-    sol$par = rep(NA, length(pars))
-    hess = NULL
+    sol$convergence = 1
   }
   else{
     sol = ans
+    sol$value = sol$fval
+    sol$message = sol$msg
     sol$convergence = ans$ierr
+    sol$fval = NULL
+    sol$ierr= NULL
+    sol$msg = NULL
   }
-  if(sol$convergence!=0) warning("\nMidasQuantile-->warning: no convergence in bobyqa \n")
-  return(sol = sol)
+  return(sol)
 }
 
 .msnlminb = function(pars, fun, control, lb, ub, y, x, q, beta2para){
@@ -187,6 +168,7 @@ return(sol)
     out = list()
     out$convergence = 1
     out$pars = rep(NA, length(pars))
+    out$value = NA
     warning("\nMidasQuantile-->warning: no convergence using nlminb...\n")
   } else{
     best = sapply(xsol, function(x) 
@@ -216,6 +198,7 @@ return(sol)
     out = list()
     out$convergence = 1
     out$pars = rep(NA, length(pars))
+    out$value = NA
     warning("\nMidasQuantile-->warning: no convergence using ucminf...\n")
   } else{
     best = sapply(xsol, function(x) 
@@ -245,6 +228,7 @@ return(sol)
     out = list()
     out$convergence = 1
     out$pars = rep(NA, length(pars))
+    out$value = NA
     warning(paste("\nMidasQuantile->warning: no convergence in ", method, "..\n", sep = " "))
   } else{
     best = sapply(xsol, function(x) 
@@ -274,6 +258,7 @@ return(sol)
     out = list()
     out$convergence = 1
     out$pars = rep(NA, length(pars))
+    out$value = NA
     warning("\nMidasQuantile-->warning: no convergence using bobyqa...\n")
   } else{
     best = sapply(xsol, function(x) 
