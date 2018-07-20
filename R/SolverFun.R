@@ -18,7 +18,7 @@
 # If the SecondSolver still cannot solve the problem, save everything and then produce a warnings to reestimate with other solvers
 
 
-.sol <- function(MainSolver,SecondSolver,betaIni,fun,y,X,q,beta2para,lb,ub,control){
+.sol <- function(MainSolver,SecondSolver,betaIni,fun,y,x,q,beta2para,lb,ub,control){
   if(!is.na(match(MainSolver,c("L-BFGS-B","Nelder-Mead")))){
     control$method = MainSolver
     MainSolver = "optim"
