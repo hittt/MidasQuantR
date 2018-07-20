@@ -229,7 +229,7 @@ return(sol)
     out$convergence = 1
     out$pars = rep(NA, length(pars))
     out$value = NA
-    warning(paste("\nMidasQuantile->warning: no convergence in ", method, "..\n", sep = " "))
+    warning("\nMidasQuantile->warning: no convergence in optim..\n")
   } else{
     best = sapply(xsol, function(x) 
       if(is.null(x)){
