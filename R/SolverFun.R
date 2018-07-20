@@ -18,8 +18,7 @@
 # If the SecondSolver still cannot solve the problem, save everything and then produce a warnings to reestimate with other solvers
 
 
-
-.sol <- function(MainSolver,SecondSolver,betaIni,y,X,q,beta2para,lb,ub,control){
+.sol <- function(MainSolver,SecondSolver,betaIni,fun,y,X,q,beta2para,lb,ub,control){
   if(!is.na(match(MainSolver,c("L-BFGS-B","Nelder-Mead")))){
     control$method = MainSolver
     MainSolver = "optim"
@@ -45,7 +44,7 @@
                      bobyqa = .msbobyqa(betaIni, fun, control, lb, ub, y, x, q, beta2para))
     if(retval$convergence == 1){
       retval = list()
-      retval = list()
+      retval$value = NA
       retval$convergence = 1
       retval$pars = rep(NA, numPars)
       warning("\nMidasQuantile : Both two solvers fail..\n")
@@ -62,7 +61,7 @@
                     bobyqa = .msbobyqa(betaIni, fun, control, lb, ub, y, x, q, beta2para))
     if(retval$convergence == 1){
       retval = list()
-      retval = list()
+      retval$value = NA
       retval$convergence = 1
       retval$pars = rep(NA, numPars)
       warning("\nMidasQuantile : Second solver fails to converge..\n")
@@ -70,6 +69,10 @@
   }
   return(retval)
 }
+
+#-----------------
+# SOLVER MAIN FUNCTIONS
+#-----------------
 
 .nlminbsolver = function (pars, fun, control, lb, ub, y, x, q, beta2para){
   control$method = NULL
