@@ -16,9 +16,30 @@ arma::mat MidasBetaC(int nlag, double param1, double param2){
 
 //' @export
 // [[Rcpp::export]]
-double objFunC(Rcpp::NumericVector params,Rcpp::NumericVector yr, 
-                Rcpp::NumericMatrix Xr, double q, bool beta2para = false){
+double objFun(Rcpp::NumericVector params,Rcpp::NumericVector yr, 
+                Rcpp::NumericMatrix Xr, Rcpp::NumericMatrix Xr_neg, 
+                Rcpp::NumericMatrix Xr_pos, double q,
+                bool beta2para = false, bool As = false){
   double intercept = params[0];
+  int T = Xr.nrow(), nlag = Xr.ncol();
+  arma::colvec condQuantile = as<arma::colvec>(yr);
+  arma::mat Xneg(Xr_neg.begin(),T,nlag,false);
+  arma::mat Xpos(Xr_pos.begin(),T,nlag,false);
+  arma::mat X(Xr.begin(),T,nlag,false);
+  arma::colvec y(yr.begin(),yr.size(),false);
+  if(As){
+    double slope_neg = params[1];
+    double slope_pos = params[2];
+    double k1 = 1.0, k2 = 1.0;
+    if(beta2para){
+      k1 = params[3];
+      k2 = params[4];  
+    } else {
+      k2 = params[3];
+    }
+    arma::mat weights = MidasBetaC(nlag,k1,k2);
+    condQuantile = intercept + slope_neg * (Xneg*weights) + slope_pos * (Xpos*weights);  
+  } else {
   double slope = params[1];
   double k1 = 1.0, k2 = 1.0;
   if(beta2para){
@@ -27,11 +48,9 @@ double objFunC(Rcpp::NumericVector params,Rcpp::NumericVector yr,
   } else {
     k2 = params[2];
   }
-  int nlag = Xr.ncol(),T = Xr.nrow();
-  arma::mat X(Xr.begin(), T, nlag, false);
-  arma::colvec y(yr.begin(), yr.size(), false);
   arma::mat weights = MidasBetaC(nlag,k1,k2);
-  arma::colvec condQuantile = intercept + slope * (X*weights);
+  condQuantile = intercept + slope * (X*weights);
+  }
   arma::colvec loss = y - condQuantile;
   double fval = 0; 
   for(int i = 0; i < T; ++i){
@@ -42,47 +61,88 @@ double objFunC(Rcpp::NumericVector params,Rcpp::NumericVector yr,
 
 //' @export
 // [[Rcpp::export]]
-arma::colvec condQuantileC(Rcpp::NumericVector params,Rcpp::NumericVector yr, 
-               Rcpp::NumericMatrix Xr, bool beta2para = false){
+arma::colvec condQuantile(Rcpp::NumericVector params,Rcpp::NumericVector yr, 
+                          Rcpp::NumericMatrix Xr, Rcpp::NumericMatrix Xr_neg, 
+                          Rcpp::NumericMatrix Xr_pos, bool beta2para = false, bool As = false){
   double intercept = params[0];
-  double slope = params[1];
-  double k1 = 1.0, k2 = 1.0;
-  if(beta2para){
-    k1 = params[2];
-    k2 = params[3];  
-  } else {
-    k2 = params[2];
-  }
   int T = Xr.nrow(), nlag = Xr.ncol();
-  arma::mat weights = MidasBetaC(nlag,k1,k2);
+  arma::colvec condQuantile = as<arma::colvec>(yr);
+  arma::mat Xneg(Xr_neg.begin(),T,nlag,false);
+  arma::mat Xpos(Xr_pos.begin(),T,nlag,false);
   arma::mat X(Xr.begin(),T,nlag,false);
   arma::colvec y(yr.begin(),yr.size(),false);
-  arma::colvec condQuantile = intercept + slope * (X*weights);
+  if(As){
+    double slope_neg = params[1];
+    double slope_pos = params[2];
+    double k1 = 1.0, k2 = 1.0;
+    if(beta2para){
+      k1 = params[3];
+      k2 = params[4];  
+    } else {
+      k2 = params[3];
+    }
+    arma::mat weights = MidasBetaC(nlag,k1,k2);
+    condQuantile = intercept + slope_neg * (Xneg*weights) + slope_pos * (Xpos*weights);  
+  } else {
+    double slope = params[1];
+    double k1 = 1.0, k2 = 1.0;
+    if(beta2para){
+      k1 = params[2];
+      k2 = params[3];  
+    } else {
+      k2 = params[2];
+    }
+    arma::mat weights = MidasBetaC(nlag,k1,k2);
+    condQuantile = intercept + slope * (X*weights);
+  }
   return condQuantile;
 }
 
+//' @export
 // [[Rcpp::export]]
-NumericMatrix GetIniParamsC(Rcpp::NumericVector yr, Rcpp::NumericMatrix Xr, double q, 
-                     int numInitialsRand = 10000, int numInitials = 10, bool beta2para = false){
+NumericMatrix GetIniParamsC(Rcpp::NumericVector yr, Rcpp::NumericMatrix Xr, 
+                            Rcpp::NumericMatrix Xr_neg, Rcpp::NumericMatrix Xr_pos, double q, 
+                            int numInitialsRand = 10000, int numInitials = 10, 
+                            bool beta2para = false, bool As = false){
   double T = Xr.nrow(), nlag = Xr.ncol();
   arma::mat X(Xr.begin(),T,nlag,false);
+  arma::mat Xneg(Xr_neg.begin(),T,nlag,false);
+  arma::mat Xpos(Xr_pos.begin(),T,nlag,false);
   arma::colvec y(yr.begin(),yr.size(),false);
   arma::colvec nInitalBeta = 99 * arma::randu(numInitialsRand,1) + 1;
   // Generate initial guess for the second parameters of the Beta polynomial based on Uniform distribution
   NumericMatrix  InitialParamsVec(numInitialsRand,5);
-  for(int i = 0; i < numInitialsRand;++i){
+  if(As){
+    for(int i = 0; i < numInitialsRand;++i){
     arma::vec weights = MidasBetaC(nlag, 1 , nInitalBeta[i]);
-    arma::mat Xweighted = X * weights;
+    arma::mat Xweighted = Xneg*weights + Xpos*weights;
     arma::mat X0 = arma::join_rows(arma::ones(T,1),Xweighted);
     arma::mat olsIni = solve(X0,y);
     if(beta2para){
-      NumericVector xx = NumericVector::create(olsIni[0],olsIni[1],1,nInitalBeta[i]);
-      double fval = objFunC(xx,yr,Xr,q,beta2para);
-      InitialParamsVec(i,_) = NumericVector::create(fval,olsIni[0],olsIni[1],1,nInitalBeta[i]);
+      NumericVector xx = NumericVector::create(olsIni[0],olsIni[1],olsIni[1],1,nInitalBeta[i]);
+      double fval = objFun(xx,yr,Xr,Xr_neg,Xr_pos,q,beta2para,As);
+      InitialParamsVec(i,_) = NumericVector::create(fval,olsIni[0],olsIni[1],olsIni[1],1,nInitalBeta[i]);
     } else{
-      NumericVector xx = NumericVector::create(olsIni[0],olsIni[1],nInitalBeta[i]);
-      double fval = objFunC(xx,yr,Xr,q,beta2para);
-      InitialParamsVec(i,_) = NumericVector::create(fval,olsIni[0],olsIni[1],nInitalBeta[i]);  
+      NumericVector xx = NumericVector::create(olsIni[0],olsIni[1],olsIni[1],nInitalBeta[i]);
+      double fval = objFun(xx,yr,Xr,Xr_neg,Xr_pos,q,beta2para,As);
+      InitialParamsVec(i,_) = NumericVector::create(fval,olsIni[0],olsIni[1],olsIni[1],nInitalBeta[i]);  
+    }
+  }
+  } else{
+    for(int i = 0; i < numInitialsRand;++i){
+      arma::vec weights = MidasBetaC(nlag, 1 , nInitalBeta[i]);
+      arma::mat Xweighted = X*weights;
+      arma::mat X0 = arma::join_rows(arma::ones(T,1),Xweighted);
+      arma::mat olsIni = solve(X0,y);
+      if(beta2para){
+        NumericVector xx = NumericVector::create(olsIni[0],olsIni[1],1,nInitalBeta[i]);
+        double fval = objFun(xx,yr,Xr,Xr_neg,Xr_pos,q,beta2para,As);
+        InitialParamsVec(i,_) = NumericVector::create(fval,olsIni[0],olsIni[1],1,nInitalBeta[i]);
+      } else{
+        NumericVector xx = NumericVector::create(olsIni[0],olsIni[1],nInitalBeta[i]);
+        double fval = objFun(xx,yr,Xr,Xr_neg,Xr_pos,q,beta2para,As);
+        InitialParamsVec(i,_) = NumericVector::create(fval,olsIni[0],olsIni[1],nInitalBeta[i]);  
+      }
     }
   }
   return InitialParamsVec;
