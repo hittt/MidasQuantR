@@ -61,6 +61,61 @@ double objFun(Rcpp::NumericVector params,Rcpp::NumericVector yr,
 
 //' @export
 // [[Rcpp::export]]
+double objFunVarEs(Rcpp::NumericVector params,Rcpp::NumericVector yr, Rcpp::NumericVector condmeanR,
+              Rcpp::NumericMatrix Xr, Rcpp::NumericMatrix Xr_neg, 
+              Rcpp::NumericMatrix Xr_pos, double q,
+              bool beta2para = false, bool As = false){
+  double intercept = params[0];
+  double phi = 0.0;
+  int T = Xr.nrow(), nlag = Xr.ncol();
+  arma::colvec condQuantile = as<arma::colvec>(yr);
+  arma::mat Xneg(Xr_neg.begin(),T,nlag,false);
+  arma::mat Xpos(Xr_pos.begin(),T,nlag,false);
+  arma::mat X(Xr.begin(),T,nlag,false);
+  arma::colvec y(yr.begin(),yr.size(),false);
+  arma::colvec y(yr.begin(),yr.size(),false);
+  arma::colvec mu(condMeanR.begin(),condMeanR.size(),false);
+  if(As){
+    double slope_neg = params[1];
+    double slope_pos = params[2];
+    double k1 = 1.0, k2 = 1.0;
+    if(beta2para){
+      k1 = params[3];
+      k2 = params[4];
+      phi = params[5];
+    } else {
+      k2 = params[3];
+      phi = params[4];
+    }
+    arma::mat weights = MidasBetaC(nlag,k1,k2);
+    condQuantile = intercept + slope_neg * (Xneg*weights) + slope_pos * (Xpos*weights);  
+  } else {
+    double slope = params[1];
+    double k1 = 1.0, k2 = 1.0;
+    if(beta2para){
+      k1 = params[2];
+      k2 = params[3];
+      phi = params[4];
+    } else {
+      k2 = params[2];
+      phi = params[3];
+    }
+    arma::mat weights = MidasBetaC(nlag,k1,k2);
+    condQuantile = intercept + slope * (X*weights);
+  }
+  arma::colvec es = (1.0 + exp(phi)) * condQuantile;
+  arma::colvec loss = y - condQuantile;
+  double fval = 0; 
+  for(int i = 0; i < T; ++i){
+    double hit = q - (loss[i] <= 0);
+    double muAdj = mu[i] - es[i];
+    fval += log(((1 - q)/muAdj) * exp((-loss[i]*hit)/(q*muAdj)));
+  }
+  return fval;
+}
+
+//' @export
+// [[Rcpp::export]]
 arma::colvec condQuantile(Rcpp::NumericVector params,Rcpp::NumericVector yr, 
                           Rcpp::NumericMatrix Xr, Rcpp::NumericMatrix Xr_neg, 
                           Rcpp::NumericMatrix Xr_pos, bool beta2para = false, bool As = false){
