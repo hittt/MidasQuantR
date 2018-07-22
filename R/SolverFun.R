@@ -5,6 +5,7 @@
 #' @importFrom stats optim
 #' @importFrom stats nlminb
 #' @importFrom minqa bobyqa
+#' @importFrom dfoptim nmkb
 # Decide the solver that is derivative-free. 
 # CASE 1: The default case is holding the first parameters to be 1 and vary the second paramter of Beta Polynomial
 # Good optimizer: Nelder-Mead (accurate but relatively slow) ; nlminb (good and quick); ucminf (good and quick); 
@@ -13,66 +14,73 @@
 # Beta polynomial to vary make the convergence very difficult.
 # Relatively ok optimizer: L-BFGS-B; bobyqa; nlminb
 
-# The optimization routine is to apply the MainSolver to solver for the problem without bounds. 
-# If the solution of the MainSolver is not converged --> use the second method with bounds.
-# If the SecondSolver still cannot solve the problem, save everything and then produce a warnings to reestimate with other solvers
-
-
-.sol <- function(MainSolver,SecondSolver,betaIni,fun,y,x,q,beta2para,lb,ub,control){
-  if(!is.na(match(MainSolver,c("L-BFGS-B","Nelder-Mead")))){
-    control$method = MainSolver
-    MainSolver = "optim"
-  }
-  if(!is.na(match(SecondSolver,c("L-BFGS-B","Nelder-Mead")))){
-    control$method = SecondSolver
-    SecondSolver = "optim"
-  }
-  numPars = dim(betaIni)[2]
-  retval = switch(MainSolver,
-                  optim = .msoptim(betaIni, fun, control, lb, ub, y, x, q, beta2para),
-                  ucminf = .msucminf(betaIni, fun, control, y, x, q, beta2para),
-                  nlminb = .msnlminb(betaIni, fun, control, lb, ub, y, x, q, beta2para),
-                  bobyqa = .msbobyqa(betaIni, fun, control, lb, ub, y, x, q, beta2para))
-  # Using the Second Optimizer in case the first optimizer does not converge or violate the bounds
-  
-  # In case of non-converge: Reoptimize with the SecondSolver completely
-  if(retval$convergence == 1){
-    warning("\nMidasQuantile : MainSolver fails, switching to the SecondSolver..\n")
-    retval = switch(SecondSolver,
-                     optim = .msoptim(betaIni, fun, control, lb, ub, y, x, q, beta2para),
-                     ucminf = .msucminf(betaIni, fun, control, y, x, q, beta2para),
-                     nlminb = .msnlminb(betaIni, fun, control, lb, ub, y, x, q, beta2para),
-                     bobyqa = .msbobyqa(betaIni, fun, control, lb, ub, y, x, q, beta2para))
-    if(retval$convergence == 1){
-      warning("\nMidasQuantile : Both Solvers fail..\n")
+# The optimization procedure requires 2 optimizers. For each candidate of initial parameters, the function first attempt
+# to solve the problem using the MainSolver, then using the solution (converge or not) to solve the problem. The solution of
+# the second solver is then used as initial parameters to resolve the problem. The use of multiple solvers is an attempt to 
+# get the global optimization. The process is repeated 10 times over 10 inital paramters guess (default)
+.sol <- function(MainSolver,SecondSolver=NULL, betaIni, fun, y, x, x_neg, x_pos,
+                 q, beta2para, lb, ub, control, warn = TRUE, As = FALSE){
+  rep = control$rep
+  N = NROW(betaIni)
+  xsol = vector(mode="list", length = N)
+  convCheck = 0;
+  for(i in 1:N){
+    for(ii in 1:rep){
+      sol = .solverSwitch(MainSolver, betaIni[i,], fun, control,  lb, ub, y, x,  x_neg, x_pos, q, beta2para, As)
+      iniParsTemp = sol$par
+      sol = .solverSwitch(SecondSolver, iniParsTemp, fun, control,  lb, ub, y, x,  x_neg, x_pos, q, beta2para, As)
+      iniParsTemp = sol$par
+      sol = .solverSwitch(MainSolver, iniParsTemp, fun, control,  lb, ub, y, x,  x_neg, x_pos, q, beta2para, As)
+      if(sol$convergence == 0) break
+    }
+    if(sol$convergence == 0){
+      xsol[[i]] = sol
+    } else{
+      convCheck = convCheck + 1
     }
   }
-  # In case of converge but violate bounds, reoptimize with the second optimizer with the 
-  # stating parameters inherit from the first round
-  if(sum(retval$par > lb) != numPars ||  sum(retval$par < ub) != numPars){
-    warning("\nMidasQuantile : MainSolver convergence violate bounds, switching to the SecondSolver..\n")
-    for(i in 1:dim(betaIni[1])) betaIni[i,] = retval$par
-    retval = switch(SecondSolver,
-                    optim = .msoptim(betaIni, fun, control, lb, ub, y, x, q, beta2para),
-                    nlminb = .msnlminb(betaIni, fun, control, lb, ub, y, x, q, beta2para),
-                    bobyqa = .msbobyqa(betaIni, fun, control, lb, ub, y, x, q, beta2para))
-    if(retval$convergence == 1){
-      warning("\nMidasQuantile : Second solver fails to converge..\n")
-    }
+  if(convCheck == N){
+    out = list()
+    out$convergence = 1
+    out$pars = rep(NA, dim(betaIni)[2])
+    out$value = NA
+  } else{
+    best = sapply(xsol, function(x) 
+      if(is.null(x)){
+        NA} else {
+          x$value
+        })
+    best = which(best == min(best, na.rm=TRUE))
+    out = xsol[[best]]
   }
-  return(retval)
+  return(out)
 }
 
+.solverSwitch <- function(solver, pars, fun, control, lb, ub, y, x, x_neg, x_pos,
+                       q, beta2para, As){
+  control$rep = NULL
+  if(!is.na(match(solver,c("L-BFGS-B","Nelder-Mead")))){
+    control$method = solver
+    solver = "optim"
+  }
+  solution = switch(solver,
+                 nmkb = .nmkbsolver(pars, fun, control, lb, ub, y, x,x_neg,x_pos, q, beta2para,As),
+                 optim = .optimsolver(pars, fun, control, lb, ub, y, x, x_neg,x_pos, q, beta2para,As),
+                 ucminf = .ucminfsolver(pars, fun, control, y, x, x_neg,x_pos,q, beta2para,As),
+                 nlminb = .nlminbsolver(pars, fun, control, lb, ub, y, x, x_neg,x_pos ,q, beta2para,As),
+                 bobyqa = .bobyqasolver(pars, fun, control, lb, ub, y, x, x_neg,x_pos, q, beta2para,As))
+  return(solution)
+}
 #-----------------
 # SOLVER MAIN FUNCTIONS
 #-----------------
 
-.nlminbsolver = function (pars, fun, control, lb, ub, y, x, q, beta2para){
+.nlminbsolver = function (pars, fun, control, lb, ub, y, x, x_neg, x_pos, q, beta2para, As){
   control$method = NULL
   control = .nlminb.ctrl(control)
   rep = 10
-  ans = try(nlminb(start = pars, objective = fun, control = control, 
-                   yr = y, Xr = x, q = q, beta2para = beta2para, 
+  ans = try(nlminb(start = pars, objective = fun, control = control,As = As,
+                   yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, 
                    lower = lb, upper = ub), silent = TRUE)
   pscale = rep(1, length(pars))
   smin = 0.1
@@ -82,7 +90,8 @@
     smin = smin*0.1
     pscale = 0.25*pscale
     ans = try(nlminb(start = pars, objective = fun, control = control, 
-                     yr = y, Xr = x, q = q, beta2para = beta2para, 
+                     yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos,
+                     q = q, beta2para = beta2para, As = As,
                      lower = lb, upper = ub), silent = TRUE)
     maxtries = maxtries+1
   }
@@ -92,17 +101,20 @@
   }
   else{
     sol = ans
+    sol$value = sol$objective
+    sol$objective = NULL
   }
   return(sol = sol)
 }
 
-.ucminfsolver = function(pars, fun, control,  y, x, q, beta2para){
-  control$method = NULL
+.ucminfsolver = function(pars, fun, control,  y, x, x_neg, x_pos, q, beta2para, As){
   control = .ucminf.ctrl(control)
-  ans = try(ucminf(fn = fun, par = pars, control = control, yr = y, Xr = x, q = q, beta2para = beta2para), silent = TRUE)
+  ans = try(ucminf(fn = fun, par = pars, control = control, yr = y, Xr = x, 
+                   Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As), silent = TRUE)
   if (inherits(ans, "try-error")) {
     sol = list()
     sol$convergence = 1
+    sol$par = rep(NA,length(pars))
   }
   else{
     sol = ans
@@ -111,15 +123,15 @@
 return(sol)
 }
 
-.optimsolver = function(pars, fun, control, lb, ub, y, x, q, beta2para){
+.optimsolver = function(pars, fun, control, lb, ub, y, x,x_neg,x_pos, q, beta2para,As){
   method = control$method
   control$method = NULL
   if(method == "L-BFGS-B"){
     ans = optim(fn = fun, par = pars, control = control, method = "L-BFGS-B",lower = lb, upper = ub,
-                yr = y, Xr = x, q = q, beta2para = beta2para)
+                yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As)
   } else {
     ans = optim(fn = fun, par = pars, control = control, method = "Nelder-Mead",
-                yr = y, Xr = x, q = q, beta2para = beta2para)
+                yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As)
   }
   if (inherits(ans, "try-error")) {
     sol = list()
@@ -131,11 +143,11 @@ return(sol)
   return(sol)
 }
 
-.bobyqasolver = function(pars, fun, control, lb, ub, y, x, q, beta2para){
+.bobyqasolver = function(pars, fun, control, lb, ub, y, x, x_neg, x_pos, q, beta2para, As){
   control$method = NULL
   control = .minqa.ctrl(control,pars)
   ans = bobyqa(fn = fun, par = pars, control = control,lower = lb, upper = ub,
-               yr = y, Xr = x, q = q, beta2para = beta2para)
+               yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos,q = q, beta2para = beta2para, As = As)
   if (inherits(ans, "try-error")) {
     sol = list()
     sol$convergence = 1
@@ -144,7 +156,7 @@ return(sol)
     sol = ans
     sol$value = sol$fval
     sol$message = sol$msg
-    sol$convergence = ans$ierr
+    sol$convergence = sol$ierr
     sol$fval = NULL
     sol$ierr= NULL
     sol$msg = NULL
@@ -152,125 +164,21 @@ return(sol)
   return(sol)
 }
 
-.msnlminb = function(pars, fun, control, lb, ub, y, x, q, beta2para){
-  N = NROW(pars)
-  xsol = vector(mode="list", length = N)
-  convCheck = 0;
-  for(i in 1:N){
-    sol = .nlminbsolver(pars[i,], fun, control,  lb, ub, y, x, q, beta2para)
-    if(sol$convergence == 0){
-      xsol[[i]] = sol
-    } else{
-      convCheck = convCheck + 1
-    }
+.nmkbsolver = function(pars, fun, control, lb, ub, y, x, x_neg, x_pos, q, beta2para,As){
+  control$method = NULL
+  control = .dfoptim.ctrl(control)
+  ans = try(nmkb(fn = fun, par = pars, control = control, lower = lb, upper = ub, yr = y, 
+                 Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As), silent = TRUE)
+  if (inherits(ans, "try-error")) {
+    sol = list()
+    sol$convergence = 1
   }
-  if(convCheck == N){
-    out = list()
-    out$convergence = 1
-    out$pars = rep(NA, length(pars))
-    out$value = NA
-    warning("\nMidasQuantile-->warning: no convergence using nlminb...\n")
-  } else{
-    best = sapply(xsol, function(x) 
-      if(is.null(x)){
-        NA} else {
-          x$objective
-        })
-    best = which(best == min(best, na.rm=TRUE))
-    out = xsol[[best]]
+  else{
+    sol = ans
   }
-  return(out)
+  return(sol)
 }
 
-.msucminf = function(pars, fun, control, y, x, q, beta2para){
-  N = NROW(pars)
-  xsol = vector(mode="list", length = N)
-  convCheck = 0;
-  for(i in 1:N){
-    sol = .ucminfsolver(pars[i,], fun, control, y, x, q, beta2para)
-    if(sol$convergence == 0){
-      xsol[[i]] = sol
-    } else{
-      convCheck = convCheck + 1
-    }
-  }
-  if(convCheck == N){
-    out = list()
-    out$convergence = 1
-    out$pars = rep(NA, length(pars))
-    out$value = NA
-    warning("\nMidasQuantile-->warning: no convergence using ucminf...\n")
-  } else{
-    best = sapply(xsol, function(x) 
-      if(is.null(x)){
-        NA} else {
-          x$value
-        })
-    best = which(best == min(best, na.rm=TRUE))
-    out = xsol[[best]]
-  }
-  return(out)
-}
-
-.msoptim = function(pars, fun, control, lb, ub, y, x, q, beta2para){
-  N = NROW(pars)
-  xsol = vector(mode="list", length = N)
-  convCheck = 0;
-  for(i in 1:N){
-    sol = .optimsolver(pars[i,], fun, control,  lb, ub, y, x, q, beta2para)
-    if(sol$convergence == 0){
-      xsol[[i]] = sol
-    } else{
-      convCheck = convCheck + 1
-    }
-  }
-  if(convCheck == N){
-    out = list()
-    out$convergence = 1
-    out$pars = rep(NA, length(pars))
-    out$value = NA
-    warning("\nMidasQuantile->warning: no convergence in optim..\n")
-  } else{
-    best = sapply(xsol, function(x) 
-      if(is.null(x)){
-        NA} else {
-          x$value
-        })
-    best = which(best == min(best, na.rm=TRUE))
-    out = xsol[[best]]
-  }
-  return(out)
-}
-
-.msbobyqa = function(pars, fun, control, lb, ub, y, x, q, beta2para){
-  N = NROW(pars)
-  xsol = vector(mode="list", length = N)
-  convCheck = 0;
-  for(i in 1:N){
-    sol = .bobyqasolver(pars[i,], fun, control,  lb, ub, y, x, q, beta2para)
-    if(sol$convergence == 0){
-      xsol[[i]] = sol
-    } else{
-      convCheck = convCheck + 1
-    }
-  }
-  if(convCheck == N){
-    out = list()
-    out$convergence = 1
-    out$pars = rep(NA, length(pars))
-    out$value = NA
-    warning("\nMidasQuantile-->warning: no convergence using bobyqa...\n")
-  } else{
-    best = sapply(xsol, function(x) 
-      if(is.null(x)){
-        NA} else {
-          x$fval
-        })
-    best = which(best == min(best, na.rm=TRUE))
-    out = xsol[[best]]
-  }
-  return(out)
-}
 #######################################
 # SOLVER CONTROLS
 #######################################
@@ -292,7 +200,7 @@ return(sol)
 
 .nlminb.ctrl = function(control){
   if(is.null(control$trace)) control$trace = 0
-  if(is.null(control$eval.max)) control$eval.max = 1500
+  if(is.null(control$eval.max)) control$eval.max = 500
   if(is.null(control$iter.max)) control$iter.max = 500
   if(is.null(control$abs.tol)) control$abs.tol = 0
   if(is.null(control$rel.tol)) control$rel.tol = 1e-10
@@ -317,6 +225,19 @@ return(sol)
   if(is.null(control$iprint)) control$iprint = 0
   if(is.null(control$maxfun)) control$maxfun = 10000
   mm = match(names(control), c("npt", "rhobeg", "rhoend", "iprint", "maxfun"))
+  if(any(is.na(mm))){
+    idx = which(is.na(mm))
+    wrong_opts = NULL
+    for(i in 1:length(idx)) wrong_opts = c(wrong_opts, names(control)[idx[i]])
+    warning(paste(c("\nunidentified option(s) in solver.control:\n", wrong_opts), sep="", collapse=" "), call. = FALSE, domain = NULL)
+  }
+  return(control)
+}
+
+.dfoptim.ctrl = function(control){
+  if(is.null(control$tol)) control$tol = 1e-08
+  if(is.null(control$restarts.max)) control$restarts.max = 5
+  mm = match(names(control), c("tol", "restarts.max"))
   if(any(is.na(mm))){
     idx = which(is.na(mm))
     wrong_opts = NULL
