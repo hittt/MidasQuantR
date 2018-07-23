@@ -18,7 +18,7 @@
 # to solve the problem using the MainSolver, then using the solution (converge or not) to solve the problem. The solution of
 # the second solver is then used as initial parameters to resolve the problem. The use of multiple solvers is an attempt to 
 # get the global optimization. The process is repeated 10 times over 10 inital paramters guess (default)
-.sol <- function(MainSolver,SecondSolver=NULL, betaIni, fun, y, x, x_neg, x_pos,
+.sol <- function(MainSolver,SecondSolver, betaIni, fun, y, condMean = NULL, x, x_neg, x_pos,
                  q, beta2para, lb, ub, control, warn = TRUE, As = FALSE){
   rep = control$rep
   N = NROW(betaIni)
@@ -26,11 +26,11 @@
   convCheck = 0;
   for(i in 1:N){
     for(ii in 1:rep){
-      sol = .solverSwitch(MainSolver, betaIni[i,], fun, control,  lb, ub, y, x,  x_neg, x_pos, q, beta2para, As)
+      sol = .solverSwitch(MainSolver, betaIni[i,], fun, control,  lb, ub, y, condMean, x,  x_neg, x_pos, q, beta2para, As)
       iniParsTemp = sol$par
-      sol = .solverSwitch(SecondSolver, iniParsTemp, fun, control,  lb, ub, y, x,  x_neg, x_pos, q, beta2para, As)
+      sol = .solverSwitch(SecondSolver, iniParsTemp, fun, control,  lb, ub, y, condMean, x,  x_neg, x_pos, q, beta2para, As)
       iniParsTemp = sol$par
-      sol = .solverSwitch(MainSolver, iniParsTemp, fun, control,  lb, ub, y, x,  x_neg, x_pos, q, beta2para, As)
+      sol = .solverSwitch(MainSolver, iniParsTemp, fun, control,  lb, ub, y, condMean, x,  x_neg, x_pos, q, beta2para, As)
       if(sol$convergence == 0) break
     }
     if(sol$convergence == 0){
@@ -56,7 +56,7 @@
   return(out)
 }
 
-.solverSwitch <- function(solver, pars, fun, control, lb, ub, y, x, x_neg, x_pos,
+.solverSwitch <- function(solver, pars, fun, control, lb, ub, y, condMean, x, x_neg, x_pos,
                        q, beta2para, As){
   control$rep = NULL
   if(!is.na(match(solver,c("L-BFGS-B","Nelder-Mead")))){
@@ -64,24 +64,30 @@
     solver = "optim"
   }
   solution = switch(solver,
-                 nmkb = .nmkbsolver(pars, fun, control, lb, ub, y, x,x_neg,x_pos, q, beta2para,As),
-                 optim = .optimsolver(pars, fun, control, lb, ub, y, x, x_neg,x_pos, q, beta2para,As),
-                 ucminf = .ucminfsolver(pars, fun, control, y, x, x_neg,x_pos,q, beta2para,As),
-                 nlminb = .nlminbsolver(pars, fun, control, lb, ub, y, x, x_neg,x_pos ,q, beta2para,As),
-                 bobyqa = .bobyqasolver(pars, fun, control, lb, ub, y, x, x_neg,x_pos, q, beta2para,As))
+                 nmkb = .nmkbsolver(pars, fun, control, lb, ub, y, condMean, x,x_neg,x_pos, q, beta2para,As),
+                 optim = .optimsolver(pars, fun, control, lb, ub, y, condMean, x, x_neg,x_pos, q, beta2para,As),
+                 ucminf = .ucminfsolver(pars, fun, control, y, condMean, x, x_neg,x_pos,q, beta2para,As),
+                 nlminb = .nlminbsolver(pars, fun, control, lb, ub, y, condMean, x, x_neg,x_pos ,q, beta2para,As),
+                 bobyqa = .bobyqasolver(pars, fun, control, lb, ub, y, condMean, x, x_neg,x_pos, q, beta2para,As))
   return(solution)
 }
 #-----------------
 # SOLVER MAIN FUNCTIONS
 #-----------------
 
-.nlminbsolver = function (pars, fun, control, lb, ub, y, x, x_neg, x_pos, q, beta2para, As){
+.nlminbsolver = function (pars, fun, control, lb, ub, y, condMean, x, x_neg, x_pos, q, beta2para, As){
   control$method = NULL
   control = .nlminb.ctrl(control)
   rep = 10
-  ans = try(nlminb(start = pars, objective = fun, control = control,As = As,
+  if(is.null(condMean)){
+    ans = try(nlminb(start = pars, objective = fun, control = control,As = As,
                    yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, 
                    lower = lb, upper = ub), silent = TRUE)
+  } else{
+    ans = try(nlminb(start = pars, objective = fun, control = control,As = As,
+                     yr = y, condmeanR = condMean, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, 
+                     lower = lb, upper = ub), silent = TRUE)
+  }
   pscale = rep(1, length(pars))
   smin = 0.1
   maxtries = 1
@@ -89,10 +95,15 @@
     control$step.min = smin*0.1
     smin = smin*0.1
     pscale = 0.25*pscale
-    ans = try(nlminb(start = pars, objective = fun, control = control, 
-                     yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos,
-                     q = q, beta2para = beta2para, As = As,
-                     lower = lb, upper = ub), silent = TRUE)
+    if(is.null(condMean)){
+      ans = try(nlminb(start = pars, objective = fun, control = control,As = As,
+                       yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, 
+                       lower = lb, upper = ub), silent = TRUE)
+    } else{
+      ans = try(nlminb(start = pars, objective = fun, control = control,As = As,
+                       yr = y, condmeanR = condMean, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, 
+                       lower = lb, upper = ub), silent = TRUE)
+    }
     maxtries = maxtries+1
   }
   if (inherits(ans, "try-error")) {
@@ -107,10 +118,15 @@
   return(sol = sol)
 }
 
-.ucminfsolver = function(pars, fun, control,  y, x, x_neg, x_pos, q, beta2para, As){
+.ucminfsolver = function(pars, fun, control,  y, condMean, x, x_neg, x_pos, q, beta2para, As){
   control = .ucminf.ctrl(control)
-  ans = try(ucminf(fn = fun, par = pars, control = control, yr = y, Xr = x, 
+  if(is.null(condMean)){
+    ans = try(ucminf(fn = fun, par = pars, control = control, yr = y, Xr = x, 
                    Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As), silent = TRUE)
+  } else{
+    ans = try(ucminf(fn = fun, par = pars, control = control, yr = y, Xr = x, condmeanR = condMean,
+                     Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As), silent = TRUE)
+  }
   if (inherits(ans, "try-error")) {
     sol = list()
     sol$convergence = 1
@@ -123,15 +139,25 @@
 return(sol)
 }
 
-.optimsolver = function(pars, fun, control, lb, ub, y, x,x_neg,x_pos, q, beta2para,As){
+.optimsolver = function(pars, fun, control, lb, ub, y, condMean, x,x_neg,x_pos, q, beta2para,As){
   method = control$method
   control$method = NULL
   if(method == "L-BFGS-B"){
-    ans = optim(fn = fun, par = pars, control = control, method = "L-BFGS-B",lower = lb, upper = ub,
+    if(is.null(condMean)){
+      ans = optim(fn = fun, par = pars, control = control, method = "L-BFGS-B",lower = lb, upper = ub,
                 yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As)
+    } else {
+      ans = optim(fn = fun, par = pars, control = control, method = "L-BFGS-B",lower = lb, upper = ub,condmeanR = condMean,
+                  yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As)
+    }
   } else {
-    ans = optim(fn = fun, par = pars, control = control, method = "Nelder-Mead",
-                yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As)
+    if(is.null(condMean)){
+      ans = optim(fn = fun, par = pars, control = control, method = "Nelder-Mead",lower = lb, upper = ub,
+                  yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As)
+    } else {
+      ans = optim(fn = fun, par = pars, control = control, method = "Nelder-Mead",lower = lb, upper = ub,condmeanR = condMean,
+                  yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As)
+    }
   }
   if (inherits(ans, "try-error")) {
     sol = list()
@@ -143,11 +169,16 @@ return(sol)
   return(sol)
 }
 
-.bobyqasolver = function(pars, fun, control, lb, ub, y, x, x_neg, x_pos, q, beta2para, As){
+.bobyqasolver = function(pars, fun, control, lb, ub, y, condMean, x, x_neg, x_pos, q, beta2para, As){
   control$method = NULL
   control = .minqa.ctrl(control,pars)
-  ans = bobyqa(fn = fun, par = pars, control = control,lower = lb, upper = ub,
+  if(is.null(condMean)){
+    ans = bobyqa(fn = fun, par = pars, control = control,lower = lb, upper = ub,
                yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos,q = q, beta2para = beta2para, As = As)
+  } else{
+    ans = bobyqa(fn = fun, par = pars, control = control,lower = lb, upper = ub, condmeanR = condMean,
+                 yr = y, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos,q = q, beta2para = beta2para, As = As)
+  }
   if (inherits(ans, "try-error")) {
     sol = list()
     sol$convergence = 1
@@ -164,11 +195,16 @@ return(sol)
   return(sol)
 }
 
-.nmkbsolver = function(pars, fun, control, lb, ub, y, x, x_neg, x_pos, q, beta2para,As){
+.nmkbsolver = function(pars, fun, control, lb, ub, y, condMean, x, x_neg, x_pos, q, beta2para,As){
   control$method = NULL
   control = .dfoptim.ctrl(control)
-  ans = try(nmkb(fn = fun, par = pars, control = control, lower = lb, upper = ub, yr = y, 
+  if(is.null(condMean)){
+    ans = try(nmkb(fn = fun, par = pars, control = control, lower = lb, upper = ub, yr = y, 
                  Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As), silent = TRUE)
+  } else {
+    ans = try(nmkb(fn = fun, par = pars, control = control, lower = lb, upper = ub, yr = y, condmeanR = condMean,
+                   Xr = x, Xr_neg = x_neg, Xr_pos = x_pos, q = q, beta2para = beta2para, As = As), silent = TRUE)
+  }
   if (inherits(ans, "try-error")) {
     sol = list()
     sol$convergence = 1

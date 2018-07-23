@@ -54,9 +54,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// GetIniParamsC
-NumericMatrix GetIniParamsC(Rcpp::NumericVector yr, Rcpp::NumericMatrix Xr, Rcpp::NumericMatrix Xr_neg, Rcpp::NumericMatrix Xr_pos, double q, int numInitialsRand, int numInitials, bool beta2para, bool As);
-RcppExport SEXP _MidasQuantR_GetIniParamsC(SEXP yrSEXP, SEXP XrSEXP, SEXP Xr_negSEXP, SEXP Xr_posSEXP, SEXP qSEXP, SEXP numInitialsRandSEXP, SEXP numInitialsSEXP, SEXP beta2paraSEXP, SEXP AsSEXP) {
+// GetIniParamsUni
+NumericMatrix GetIniParamsUni(Rcpp::NumericVector yr, Rcpp::NumericMatrix Xr, Rcpp::NumericMatrix Xr_neg, Rcpp::NumericMatrix Xr_pos, double q, int numInitialsRand, int numInitials, bool beta2para, bool As);
+RcppExport SEXP _MidasQuantR_GetIniParamsUni(SEXP yrSEXP, SEXP XrSEXP, SEXP Xr_negSEXP, SEXP Xr_posSEXP, SEXP qSEXP, SEXP numInitialsRandSEXP, SEXP numInitialsSEXP, SEXP beta2paraSEXP, SEXP AsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -69,7 +69,65 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type numInitials(numInitialsSEXP);
     Rcpp::traits::input_parameter< bool >::type beta2para(beta2paraSEXP);
     Rcpp::traits::input_parameter< bool >::type As(AsSEXP);
-    rcpp_result_gen = Rcpp::wrap(GetIniParamsC(yr, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As));
+    rcpp_result_gen = Rcpp::wrap(GetIniParamsUni(yr, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As));
+    return rcpp_result_gen;
+END_RCPP
+}
+// objFunAL
+double objFunAL(Rcpp::NumericVector params, Rcpp::NumericVector yr, Rcpp::NumericVector condmeanR, Rcpp::NumericMatrix Xr, Rcpp::NumericMatrix Xr_neg, Rcpp::NumericMatrix Xr_pos, double q, bool beta2para, bool As);
+RcppExport SEXP _MidasQuantR_objFunAL(SEXP paramsSEXP, SEXP yrSEXP, SEXP condmeanRSEXP, SEXP XrSEXP, SEXP Xr_negSEXP, SEXP Xr_posSEXP, SEXP qSEXP, SEXP beta2paraSEXP, SEXP AsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type yr(yrSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type condmeanR(condmeanRSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type Xr(XrSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type Xr_neg(Xr_negSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type Xr_pos(Xr_posSEXP);
+    Rcpp::traits::input_parameter< double >::type q(qSEXP);
+    Rcpp::traits::input_parameter< bool >::type beta2para(beta2paraSEXP);
+    Rcpp::traits::input_parameter< bool >::type As(AsSEXP);
+    rcpp_result_gen = Rcpp::wrap(objFunAL(params, yr, condmeanR, Xr, Xr_neg, Xr_pos, q, beta2para, As));
+    return rcpp_result_gen;
+END_RCPP
+}
+// condVaRES
+Rcpp::List condVaRES(Rcpp::NumericVector params, Rcpp::NumericVector yr, Rcpp::NumericVector condmeanR, Rcpp::NumericMatrix Xr, Rcpp::NumericMatrix Xr_neg, Rcpp::NumericMatrix Xr_pos, bool beta2para, bool As);
+RcppExport SEXP _MidasQuantR_condVaRES(SEXP paramsSEXP, SEXP yrSEXP, SEXP condmeanRSEXP, SEXP XrSEXP, SEXP Xr_negSEXP, SEXP Xr_posSEXP, SEXP beta2paraSEXP, SEXP AsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type yr(yrSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type condmeanR(condmeanRSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type Xr(XrSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type Xr_neg(Xr_negSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type Xr_pos(Xr_posSEXP);
+    Rcpp::traits::input_parameter< bool >::type beta2para(beta2paraSEXP);
+    Rcpp::traits::input_parameter< bool >::type As(AsSEXP);
+    rcpp_result_gen = Rcpp::wrap(condVaRES(params, yr, condmeanR, Xr, Xr_neg, Xr_pos, beta2para, As));
+    return rcpp_result_gen;
+END_RCPP
+}
+// GetIniParamsAL
+NumericMatrix GetIniParamsAL(Rcpp::NumericVector yr, Rcpp::NumericVector condmeanR, Rcpp::NumericVector QuantEst, Rcpp::NumericMatrix Xr, Rcpp::NumericMatrix Xr_neg, Rcpp::NumericMatrix Xr_pos, double q, int numInitialsRand, int numInitials, bool beta2para, bool As);
+RcppExport SEXP _MidasQuantR_GetIniParamsAL(SEXP yrSEXP, SEXP condmeanRSEXP, SEXP QuantEstSEXP, SEXP XrSEXP, SEXP Xr_negSEXP, SEXP Xr_posSEXP, SEXP qSEXP, SEXP numInitialsRandSEXP, SEXP numInitialsSEXP, SEXP beta2paraSEXP, SEXP AsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type yr(yrSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type condmeanR(condmeanRSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type QuantEst(QuantEstSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type Xr(XrSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type Xr_neg(Xr_negSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type Xr_pos(Xr_posSEXP);
+    Rcpp::traits::input_parameter< double >::type q(qSEXP);
+    Rcpp::traits::input_parameter< int >::type numInitialsRand(numInitialsRandSEXP);
+    Rcpp::traits::input_parameter< int >::type numInitials(numInitialsSEXP);
+    Rcpp::traits::input_parameter< bool >::type beta2para(beta2paraSEXP);
+    Rcpp::traits::input_parameter< bool >::type As(AsSEXP);
+    rcpp_result_gen = Rcpp::wrap(GetIniParamsAL(yr, condmeanR, QuantEst, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -78,7 +136,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MidasQuantR_MidasBetaC", (DL_FUNC) &_MidasQuantR_MidasBetaC, 3},
     {"_MidasQuantR_objFun", (DL_FUNC) &_MidasQuantR_objFun, 8},
     {"_MidasQuantR_condQuantile", (DL_FUNC) &_MidasQuantR_condQuantile, 7},
-    {"_MidasQuantR_GetIniParamsC", (DL_FUNC) &_MidasQuantR_GetIniParamsC, 9},
+    {"_MidasQuantR_GetIniParamsUni", (DL_FUNC) &_MidasQuantR_GetIniParamsUni, 9},
+    {"_MidasQuantR_objFunAL", (DL_FUNC) &_MidasQuantR_objFunAL, 9},
+    {"_MidasQuantR_condVaRES", (DL_FUNC) &_MidasQuantR_condVaRES, 8},
+    {"_MidasQuantR_GetIniParamsAL", (DL_FUNC) &_MidasQuantR_GetIniParamsAL, 11},
     {NULL, NULL, 0}
 };
 

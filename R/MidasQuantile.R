@@ -1,5 +1,5 @@
 #--------------------------------
-# MAIN FUNCTIONS: Estimate MIDAS quantile regression with Symmetric Specification
+# MAIN FUNCTIONS: Estimate MIDAS quantile regression
 #--------------------------------
 
 #' @export MidasQuantile
@@ -25,7 +25,7 @@ MidasQuantile <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
   if(is.null(GetSe)) GetSe = TRUE
   if(is.null(GetSeSim)) GetSeSim = 200
   if(is.null(ovlap)) ovlap= TRUE
-  if(is.null(beta2para)){
+  if(is.null(beta2para)||!beta2para){
     beta2para = FALSE
     if(As){
       lb = c(-Inf,-Inf,-Inf,0)
