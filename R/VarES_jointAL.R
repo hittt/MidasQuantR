@@ -73,7 +73,7 @@ VarEs_AL <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
   if(is.null(armaOrder)){
     meanFit <- forecast::auto.arima(y, max.d = 0, max.D = 0)
     if(length(meanFit$coef) == 0){
-      meanCoef = NA
+      meanCoef = 0
       condMean = rep(0,length(y))
     } else{
       meanCoef <- lmtest::coeftest(meanFit)
@@ -145,7 +145,7 @@ VarEs_AL <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
     }
     out = list(estPars = estPars, pval = pval, yLowFreq = y, yDate = yDate, VaRES = VaRES,
                quantile = q, beta2para = beta2para, Solvers = c(MainSolver,SecondSolver),
-               fval = fval, conv = convergeFlag)
+               fval = fval, conv = convergeFlag, meanEst = meanCoef)
   }
   return(out)
 }
