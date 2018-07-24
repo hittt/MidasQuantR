@@ -1,5 +1,5 @@
 #--------------------------------
-# MAIN FUNCTIONS: Estimate MIDAS quantile regression with Symmetric Specification
+# MAIN FUNCTIONS: Estimate MIDAS quantile regression
 #--------------------------------
 
 #' @export MidasQuantile
@@ -7,7 +7,7 @@ MidasQuantile <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
                           horizon = 10, nlag = 100, ovlap = NULL, numInitialsRand = 10000,
                           numInitials = 10, GetSe = NULL, GetSeSim = NULL, Params = NULL, startPars = NULL,
                           MainSolver = "ucminf",SecondSolver = "nmkb",As = FALSE,
-                          fitcontrol = list(rep = 5),beta2para = NULL,warn = TRUE){
+                          fitcontrol = list(rep = 5),beta2para = NULL,warn = TRUE, simpleRet = FALSE){
   #-- set up arguments ----
   if(length(yDate) != length(y))  stop("\nMidasQuantile-->error: Length of y and X should be the same\n")
   y[is.na(y)] = mean(y,na.rm = TRUE)
@@ -25,7 +25,7 @@ MidasQuantile <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
   if(is.null(GetSe)) GetSe = TRUE
   if(is.null(GetSeSim)) GetSeSim = 200
   if(is.null(ovlap)) ovlap= TRUE
-  if(is.null(beta2para)){
+  if(is.null(beta2para)||!beta2para){
     beta2para = FALSE
     if(As){
       lb = c(-Inf,-Inf,-Inf,0)
@@ -45,9 +45,9 @@ MidasQuantile <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
   }
   #------ Get the mixed data to start estimation -----
   dataEst <- MixedFreqQuant(DataY = y,DataYdate = yDate,DataX = x,DataXdate = xDate,
-                            xlag = nlag,period = horizon,ovlap = ovlap)
+                            xlag = nlag,period = horizon,ovlap = ovlap, simpleRet = simpleRet)
   dataHigh <- MixedFreqQuant(DataY = y,DataYdate = yDate,DataX = y,DataXdate = yDate,
-                             xlag = nlag,period = horizon,ovlap = ovlap)
+                             xlag = nlag,period = horizon,ovlap = ovlap, simpleRet = simpleRet)
   y = dataEst$EstY;
   yDate <- dataEst$EstYdate
   x = dataEst$EstX

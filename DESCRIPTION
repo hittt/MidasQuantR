@@ -7,6 +7,7 @@ Author: Who wrote it
 Maintainer: Who to complain to <yourfault@somewhere.net>
 Description: More about what it does (maybe more than one line)
 License: What license is it under?
-Imports: Rcpp (>= 0.12.17)
+Imports: Rcpp (>= 0.12.17), forecast, lmtest
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 6.0.1
+LazyData: true

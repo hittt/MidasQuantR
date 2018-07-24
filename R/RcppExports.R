@@ -17,7 +17,21 @@ condQuantile <- function(params, yr, Xr, Xr_neg, Xr_pos, beta2para = FALSE, As =
 }
 
 #' @export
-GetIniParamsC <- function(yr, Xr, Xr_neg, Xr_pos, q, numInitialsRand = 10000L, numInitials = 10L, beta2para = FALSE, As = FALSE) {
-    .Call('_MidasQuantR_GetIniParamsC', PACKAGE = 'MidasQuantR', yr, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As)
+GetIniParamsUni <- function(yr, Xr, Xr_neg, Xr_pos, q, numInitialsRand = 10000L, numInitials = 10L, beta2para = FALSE, As = FALSE) {
+    .Call('_MidasQuantR_GetIniParamsUni', PACKAGE = 'MidasQuantR', yr, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As)
+}
+
+#' @export
+objFunAL <- function(params, yr, condmeanR, Xr, Xr_neg, Xr_pos, q, beta2para = FALSE, As = FALSE) {
+    .Call('_MidasQuantR_objFunAL', PACKAGE = 'MidasQuantR', params, yr, condmeanR, Xr, Xr_neg, Xr_pos, q, beta2para, As)
+}
+
+#' @export
+condVaRES <- function(params, yr, condmeanR, Xr, Xr_neg, Xr_pos, beta2para = FALSE, As = FALSE) {
+    .Call('_MidasQuantR_condVaRES', PACKAGE = 'MidasQuantR', params, yr, condmeanR, Xr, Xr_neg, Xr_pos, beta2para, As)
+}
+
+GetIniParamsAL <- function(yr, condmeanR, QuantEst, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As) {
+    .Call('_MidasQuantR_GetIniParamsAL', PACKAGE = 'MidasQuantR', yr, condmeanR, QuantEst, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As)
 }
 
