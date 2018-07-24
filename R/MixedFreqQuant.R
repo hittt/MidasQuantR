@@ -7,8 +7,7 @@
 #' @import pracma
 #' @importFrom Rcpp sourceCpp evalCpp
 #-------------
-MixedFreqQuant <- function(DataY,DataYdate,DataX,DataXdate,xlag,period,ovlap = NULL){
-  if(is.null(ovlap)) ovlap = TRUE
+MixedFreqQuant <- function(DataY,DataYdate,DataX,DataXdate,xlag,period,ovlap = TRUE,simpleRet = FALSE){
   nobs <- length(DataY)
   nobsShort = nobs-xlag-period+1
   DataYlowfreq = matrix(NA,ncol = 1, nrow = nobsShort)
@@ -65,6 +64,10 @@ MixedFreqQuant <- function(DataY,DataYdate,DataX,DataXdate,xlag,period,ovlap = N
     EstX[t,] = DataX[seq(loc-1,loc-xlag,by = -1)]
     EstXdate[t,] = DataXdate[seq(loc-1,loc-xlag,by = -1)]
     }
+  }
+  if(simpleRet == TRUE){ # If simple return is used, translate from continuous return to simple return
+    EstY = exp(EstY) - 1
+    EstX = exp(EstX) - 1
   }
   output <- list(EstY = EstY, EstYdate = as.Date.numeric(EstYdate,origin = "1970-01-01"),
                  EstX = EstX, EstXdate = as.Date.numeric(EstXdate,origin = "1970-01-01"),

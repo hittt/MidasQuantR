@@ -9,7 +9,7 @@ VarEs_AL <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
                           armaOrder = NULL, horizon = 10, nlag = 100, ovlap = NULL, numInitialsRand = 10000,
                           numInitials = 10, GetSe = NULL, GetSeSim = NULL, Params = NULL, startPars = NULL,
                           MainSolver = "ucminf",SecondSolver = "nmkb",As = FALSE,
-                          fitcontrol = list(rep = 5),beta2para = FALSE,warn = TRUE){
+                          fitcontrol = list(rep = 5),beta2para = FALSE,warn = TRUE, simpleRet = FALSE){
   #-- set up arguments ----
   if(length(yDate) != length(y))  stop("\nMidasQuantile-->error: Length of y and X should be the same\n")
   y[is.na(y)] = mean(y,na.rm = TRUE)
@@ -49,16 +49,16 @@ VarEs_AL <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
                                 horizon = horizon, nlag = nlag, ovlap = ovlap, numInitialsRand = numInitialsRand,
                                 numInitials = numInitials, GetSe = FALSE, GetSeSim = NULL, Params = NULL, 
                                 startPars = NULL, MainSolver = MainSolver, SecondSolver = SecondSolver, As = As,
-                                fitcontrol = fitcontrol, beta2para = beta2para, warn = FALSE)
+                                fitcontrol = fitcontrol, beta2para = beta2para, warn = FALSE, simpleRet = simpleRet)
     if(UniQuantEst$conv == 1){
     stop("\nMidasQuantile -->error: The univariate quantile does not converge, try other solvers.\n", call. = FALSE)
     }
   } 
   #------ Get the mixed data to start estimation -----
   dataEst <- MixedFreqQuant(DataY = y,DataYdate = yDate,DataX = x,DataXdate = xDate,
-                            xlag = nlag,period = horizon,ovlap = ovlap)
+                            xlag = nlag,period = horizon,ovlap = ovlap, simpleRet = simpleRet)
   dataHigh <- MixedFreqQuant(DataY = y,DataYdate = yDate,DataX = y,DataXdate = yDate,
-                             xlag = nlag,period = horizon,ovlap = ovlap)
+                             xlag = nlag,period = horizon,ovlap = ovlap, simpleRet = simpleRet)
   y = dataEst$EstY;
   yDate <- dataEst$EstYdate
   x = dataEst$EstX
