@@ -31,7 +31,6 @@ condVaRES <- function(params, yr, condmeanR, Xr, Xr_neg, Xr_pos, beta2para = FAL
     .Call('_MidasQuantR_condVaRES', PACKAGE = 'MidasQuantR', params, yr, condmeanR, Xr, Xr_neg, Xr_pos, beta2para, As)
 }
 
-#' @export
 GetIniParamsAL <- function(yr, condmeanR, QuantEst, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As) {
     .Call('_MidasQuantR_GetIniParamsAL', PACKAGE = 'MidasQuantR', yr, condmeanR, QuantEst, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As)
 }

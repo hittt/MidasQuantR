@@ -264,7 +264,6 @@ Rcpp::List condVaRES(Rcpp::NumericVector params, Rcpp::NumericVector yr, Rcpp::N
                             Rcpp::Named("ES") =es);
 }
 
-//' @export
 // [[Rcpp::export]]
 NumericMatrix GetIniParamsAL(Rcpp::NumericVector yr, Rcpp::NumericVector condmeanR, Rcpp::NumericVector QuantEst, 
                               Rcpp::NumericMatrix Xr, Rcpp::NumericMatrix Xr_neg, Rcpp::NumericMatrix Xr_pos, double q,
