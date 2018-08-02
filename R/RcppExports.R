@@ -2,6 +2,21 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' @export
+CAViaRobjFun <- function(params, yr, Xr, q, model, empQuant, Uni = TRUE) {
+    .Call('_MidasQuantR_CAViaRobjFun', PACKAGE = 'MidasQuantR', params, yr, Xr, q, model, empQuant, Uni)
+}
+
+#' @export
+CAViaRcondQuant <- function(params, yr, Xr, q, model, empQuant, Uni = TRUE) {
+    .Call('_MidasQuantR_CAViaRcondQuant', PACKAGE = 'MidasQuantR', params, yr, Xr, q, model, empQuant, Uni)
+}
+
+#' @export
+C_GetIniParams_cav <- function(yr, Xr, q, model, empQuant, Uni = TRUE, numInitialsRand = 10000L, numInitials = 10L) {
+    .Call('_MidasQuantR_C_GetIniParams_cav', PACKAGE = 'MidasQuantR', yr, Xr, q, model, empQuant, Uni, numInitialsRand, numInitials)
+}
+
+#' @export
 MidasBetaC <- function(nlag, param1, param2) {
     .Call('_MidasQuantR_MidasBetaC', PACKAGE = 'MidasQuantR', nlag, param1, param2)
 }
@@ -16,9 +31,8 @@ condQuantile <- function(params, yr, Xr, Xr_neg, Xr_pos, beta2para = FALSE, As =
     .Call('_MidasQuantR_condQuantile', PACKAGE = 'MidasQuantR', params, yr, Xr, Xr_neg, Xr_pos, beta2para, As)
 }
 
-#' @export
-GetIniParamsUni <- function(yr, Xr, Xr_neg, Xr_pos, q, numInitialsRand = 10000L, numInitials = 10L, beta2para = FALSE, As = FALSE) {
-    .Call('_MidasQuantR_GetIniParamsUni', PACKAGE = 'MidasQuantR', yr, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As)
+C_GetIniParams_midas <- function(yr, Xr, Xr_neg, Xr_pos, q, numInitialsRand = 10000L, numInitials = 10L, beta2para = FALSE, As = FALSE) {
+    .Call('_MidasQuantR_C_GetIniParams_midas', PACKAGE = 'MidasQuantR', yr, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As)
 }
 
 #' @export
@@ -31,7 +45,7 @@ condVaRES <- function(params, yr, condmeanR, Xr, Xr_neg, Xr_pos, beta2para = FAL
     .Call('_MidasQuantR_condVaRES', PACKAGE = 'MidasQuantR', params, yr, condmeanR, Xr, Xr_neg, Xr_pos, beta2para, As)
 }
 
-GetIniParamsAL <- function(yr, condmeanR, QuantEst, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As) {
-    .Call('_MidasQuantR_GetIniParamsAL', PACKAGE = 'MidasQuantR', yr, condmeanR, QuantEst, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As)
+C_GetIniParams_midasAL <- function(yr, condmeanR, QuantEst, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As) {
+    .Call('_MidasQuantR_C_GetIniParams_midasAL', PACKAGE = 'MidasQuantR', yr, condmeanR, QuantEst, Xr, Xr_neg, Xr_pos, q, numInitialsRand, numInitials, beta2para, As)
 }
 

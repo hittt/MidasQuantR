@@ -101,13 +101,12 @@ arma::colvec condQuantile(Rcpp::NumericVector params,Rcpp::NumericVector yr,
   return condQuantile;
 }
 
-//' @export
 // [[Rcpp::export]]
-NumericMatrix GetIniParamsUni(Rcpp::NumericVector yr, Rcpp::NumericMatrix Xr, 
+NumericMatrix C_GetIniParams_midas(Rcpp::NumericVector yr, Rcpp::NumericMatrix Xr, 
                             Rcpp::NumericMatrix Xr_neg, Rcpp::NumericMatrix Xr_pos, double q, 
                             int numInitialsRand = 10000, int numInitials = 10, 
                             bool beta2para = false, bool As = false){
-  double T = Xr.nrow(), nlag = Xr.ncol();
+  int T = Xr.nrow(), nlag = Xr.ncol();
   arma::mat X(Xr.begin(),T,nlag,false);
   arma::mat Xneg(Xr_neg.begin(),T,nlag,false);
   arma::mat Xpos(Xr_pos.begin(),T,nlag,false);
@@ -265,16 +264,16 @@ Rcpp::List condVaRES(Rcpp::NumericVector params, Rcpp::NumericVector yr, Rcpp::N
 }
 
 // [[Rcpp::export]]
-NumericMatrix GetIniParamsAL(Rcpp::NumericVector yr, Rcpp::NumericVector condmeanR, Rcpp::NumericVector QuantEst, 
+NumericMatrix C_GetIniParams_midasAL(Rcpp::NumericVector yr, Rcpp::NumericVector condmeanR, Rcpp::NumericVector QuantEst, 
                               Rcpp::NumericMatrix Xr, Rcpp::NumericMatrix Xr_neg, Rcpp::NumericMatrix Xr_pos, double q,
                               int numInitialsRand, int numInitials, bool beta2para, bool As){
-  double T = Xr.nrow(), nlag = Xr.ncol();
+  int T = Xr.nrow(), nlag = Xr.ncol();
   arma::mat X(Xr.begin(),T,nlag,false);
   arma::mat Xneg(Xr_neg.begin(),T,nlag,false);
   arma::mat Xpos(Xr_pos.begin(),T,nlag,false);
   arma::colvec y(yr.begin(),yr.size(),false);
   arma::colvec mu(condmeanR.begin(),condmeanR.size(),false);
-  arma::colvec nInitalPhi = 3 * arma::randu(numInitialsRand,1) - 3;
+  arma::colvec nInitalPhi = 3 * arma::randu(numInitialsRand) - 3;
   int numPars = 4 + beta2para + As + 1; 
   // Depends on the model specification, we will have different number of parameters; + 1 is for fval
   // Generate initial guess for the ES formulation based on Uniform distribution
@@ -292,5 +291,3 @@ NumericMatrix GetIniParamsAL(Rcpp::NumericVector yr, Rcpp::NumericVector condmea
   return InitialParamsVec;
 }
 
-//' @export
-// [[Rcpp::export]]
