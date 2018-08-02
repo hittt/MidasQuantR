@@ -1,11 +1,11 @@
 Package: MidasQuantR
 Type: Package
-Title: What the package does (short line)
+Title: Quantile regression with Mixed-Data Sampling
 Version: 1.0
 Date: 2018-07-17
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
+Author: Trung Hai Le <trunglh@hvnh.edu.vn>
+Maintainer: Trung Hai Le <trunglh@hvnh.edu.vn>
+Description: Perform quantile regression and expected shortfall estimation with mixed data sampling (MIDAS)
 License: What license is it under?
 Imports: Rcpp (>= 0.12.17), forecast, lmtest
 LinkingTo: Rcpp, RcppArmadillo
