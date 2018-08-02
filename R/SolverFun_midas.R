@@ -21,6 +21,7 @@
 .sol <- function(MainSolver,SecondSolver, betaIni, fun, y, condMean = NULL, x, x_neg, x_pos,
                  q, beta2para, lb, ub, control, warn = TRUE, As = FALSE){
   rep = control$rep
+  control$rep = NULL
   N = NROW(betaIni)
   xsol = vector(mode="list", length = N)
   convCheck = 0;
