@@ -5,7 +5,7 @@
 #' @export CAViaR
 CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap = FALSE, numInitialsRand = 10000, 
                    empQuant = NULL,numInitials = 10, GetSe = TRUE, Params = NULL, startPars = NULL,
-                   MainSolver = "ucminf",SecondSolver = "nmkb",model = 1,fitcontrol = list(rep = 5),
+                   MainSolver = "ucminf",SecondSolver = "Nelder-Mead",model = 1,fitcontrol = list(rep = 5),
                    warn = TRUE, simpleRet = FALSE, constrained = FALSE, Uni = TRUE){
   #-- set up arguments ----
   
