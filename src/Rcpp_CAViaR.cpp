@@ -194,7 +194,7 @@ double objFunAL_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVe
     double hit = q - (loss[i] <= 0);
     double muAdj = mu[i] - condES[i];
     double dist = ((1 - q)/muAdj) * exp((-loss[i]*hit)/(q*muAdj));
-    if(dist <= 0){
+    if(dist < 0 || Rcpp::traits::is_infinite<REALSXP>(dist)){
       dist = 1e-100;
     }
     fval += -log(dist);

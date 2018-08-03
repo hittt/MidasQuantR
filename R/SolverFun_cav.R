@@ -58,7 +58,6 @@
 }
 
 .solverSwitch_cav <- function(solver, pars, fun, control,  lb, ub, y, x, model, empQuant, Uni, q,condMean){
-  control$rep = NULL
   if(!is.na(match(solver,c("L-BFGS-B","Nelder-Mead")))){
     control$method = solver
     solver = "optim"
@@ -148,10 +147,10 @@ return(sol)
    } else {
      if(is.null(condMean)){
        ans = try(optim(fn = fun, par = pars, control = control, method = "Nelder-Mead",model = model,yr = y, Xr = x,gr = NULL,
-                       lower= lb, upper = ub, empQuant = empQuant, Uni = Uni, q = q),silent = TRUE)
+                       empQuant = empQuant, Uni = Uni, q = q),silent = TRUE)
      }else{
        ans = try(optim(fn = fun, par = pars, control = control, method = "Nelder-Mead",model = model,yr = y, Xr = x,gr = NULL,
-                       lower= lb, upper = ub, empQuant = empQuant, Uni = Uni, q = q,condmeanR = condMean),silent = TRUE)
+                       empQuant = empQuant, Uni = Uni, q = q,condmeanR = condMean),silent = TRUE)
      }
   }
   if (inherits(ans, "try-error")) {
@@ -190,14 +189,13 @@ return(sol)
 }
 
 .nmkbsolver_cav = function(pars,  fun, control,  lb, ub, y, x, model, empQuant, Uni, q,condMean){
-  control$method = NULL
   control = .dfoptim.ctrl(control)
   if(is.null(condMean)){
     ans = try(nmkb(fn = fun, par = pars, control = control, lower = lb, upper = ub, yr = y, 
                  Xr = x, model = model, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
   } else{
     ans = try(nmkb(fn = fun, par = pars, control = control, lower = lb, upper = ub, yr = y, 
-                   Xr = x, model = model, empQuant = empQuant, Uni = Uni, q = q,conmeanR = condMean), silent = TRUE)
+                   Xr = x, model = model, empQuant = empQuant, Uni = Uni, q = q,condmeanR = condMean), silent = TRUE)
   }
   if (inherits(ans, "try-error")) {
     sol = list()
