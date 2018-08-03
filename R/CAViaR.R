@@ -6,7 +6,7 @@
 CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap = FALSE, numInitialsRand = 10000, 
                    empQuant = NULL,numInitials = 10, GetSe = TRUE, Params = NULL, startPars = NULL,
                    MainSolver = "ucminf",SecondSolver = "Nelder-Mead",model = 1,fitcontrol = list(rep = 5),
-                   warn = TRUE, simpleRet = FALSE, constrained = FALSE, Uni = TRUE){
+                   warn = TRUE, simpleRet = FALSE, Uni = TRUE){
   #-- set up arguments ----
   
   #--- Form the single period setting for the return series-----
@@ -37,44 +37,12 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
   }
   if(is.null(xDate)) xDate = yDate
   #-----Check the solvers input------
-  # If we want to put constrains on the parameters, only the solvers that allow contrains is accepted.
-  if(constrained){
-    if(is.na(match(MainSolver,c("L-BFGS-B","bobyqa","nlminb","nmkb")))){
-      stop("\nMidasQuantile-->error: only solver that allows for bounds can be used in case of constrained... \n")
-    }
-    if(is.na(match(SecondSolver,c("L-BFGS-B","bobyqa","nlminb","nmkb")))){
-      stop("\nMidasQuantile-->error: only solver that allows for bounds can be used in case of constrained... \n")
-    }
-  }
-  
   # The CAViaR model is sensitive to the choice of the empirical quantile to start the dynamics. Here, we use the empirical
   # quantile of the first 10% of the data sample to start the quantile dynamics.
   if(is.null(empQuant)) empQuant = unname(quantile(y[1:round(0.10*length(y))],q))
   
   # Set the bounds for the parameters. The autoregressive paramter should be between 0 and 1?
   tol = 1e-10
-  if(constrained){
-    if(model == 1){
-      if(Uni){
-        lb = c(-Inf,-Inf,tol)
-        ub = c(Inf,Inf,1-tol)
-      } else{
-        lb = c(-Inf,-Inf,-Inf,tol)
-        ub = c(Inf, Inf, Inf, 1-tol)
-      }
-    } else{
-      if(Uni){
-        lb = c(-Inf,-Inf,-Inf,tol)
-        ub = c(Inf, Inf, Inf, 1-tol)
-      } else{
-        lb = c(-Inf,-Inf,-Inf,-Inf,tol)
-        ub = c(Inf, Inf, Inf, Inf, 1-tol)
-      }
-    }
-  } else{
-    lb = -Inf
-    ub = Inf
-  }
   
   #----- Get the initial guess for the parameters-----
  betaIni = GetIniParams_cav(y = y, x = x, q = q, model = model, empQuant = empQuant, Uni = Uni, 
@@ -82,7 +50,7 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
   #----- Estimate the paramters -----------
   sol = .sol_cav(MainSolver = MainSolver,SecondSolver = SecondSolver,betaIni = betaIni,fun = objFun_cav,
              y = y, x = x,model = model,empQuant = empQuant,Uni = Uni, q = q,
-             lb = lb, ub = ub, control = fitcontrol,warn = warn)
+             control = fitcontrol,warn = warn)
   #----- Preparing outputs and computing standard errors for estimated paramters-----
   # For the CAViaR model, the standard errors are calculated using the code from Engle and Manganelli
   
