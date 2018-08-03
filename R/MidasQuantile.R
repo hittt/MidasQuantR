@@ -59,11 +59,11 @@ MidasQuantile <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
   x_pos[yHigh <= 0] = 0
   
   #----- Get the initial guess for the parameters-----
-  betaIni = GetIniParams(y = y, X = x,X_neg = x_neg,X_pos = x_pos, q = q, numInitialsRand = numInitialsRand,
+  betaIni = GetIniParams_midas(y = y, X = x,X_neg = x_neg,X_pos = x_pos, q = q, numInitialsRand = numInitialsRand,
                           numInitials = numInitials, beta2para = beta2para,As = As)
   
   #----- Estimate the paramters -----------
-  sol = .sol(MainSolver = MainSolver,SecondSolver = SecondSolver,betaIni = betaIni,fun = objFun,
+  sol = .sol(MainSolver = MainSolver,SecondSolver = SecondSolver,betaIni = betaIni,fun = objFun_midas,
              y = y, x = x,x_neg = x_neg, x_pos = x_pos, q = q, beta2para = beta2para, 
              lb = lb, ub = ub, control = fitcontrol,warn = warn,As=As)
   estPars = sol$par
@@ -72,10 +72,10 @@ MidasQuantile <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
   if(convergeFlag == 1){
     warnings("\nBoth Solvers failed to converge, try with other available solvers...\n")
     out = list(estPars = estPars, pval = NA, yLowFreq = y, yDate = yDate, 
-               condQuantile = NA, quantile = q, beta2para = beta2para, Solvers = c(MainSolver,SecondSolver),
+               condVaR = NA, quantile = q, beta2para = beta2para, Solvers = c(MainSolver,SecondSolver),
                fval = fval, conv = convergeFlag)
   } else{
-    condQ = condQuantile(params = estPars, yr = y, Xr = x,Xr_neg = x_neg, Xr_pos = x_pos, beta2para = beta2para, As = As)
+    condVaR = condVaR_midas(params = estPars,Xr = x,Xr_neg = x_neg,Xr_pos = x_pos,beta2para = beta2para,As = As)
     betaIniSim = matrix(estPars,nrow = 1)
     if(beta2para){
       if(As){
@@ -91,13 +91,13 @@ MidasQuantile <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
       }
     }
     if(GetSe){
-      resid = (y - condQ)/abs(condQ)
+      resid = (y - condVaR)/abs(condVaR)
       parSim = matrix(0,nrow = length(estPars), ncol = GetSeSim)
       for(i in 1:GetSeSim){
         residSim = sample(resid,size = length(resid),replace = TRUE)
-        ySim = condQ + residSim*abs(condQ)
+        ySim = condVaR + residSim*abs(condVaR)
         estSim = .solverSwitch(solver = MainSolver, pars = betaIniSim, y = ySim, x = x,x_neg = x_neg,
-                               x_pos, fun = objFun,q = q, beta2para = beta2para, lb = lb, ub = ub,
+                               x_pos = x_pos, fun = objFun_midas,q = q, beta2para = beta2para, lb = lb, ub = ub,
                                control = fitcontrol, As = As)
         parSim[,i] = estSim$par
       }
@@ -105,7 +105,7 @@ MidasQuantile <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
     } else{
       pval = rep(NA,length(estPars))
     }
-    out = list(estPars = estPars, pval = pval, yLowFreq = y, yDate = yDate, condQuantile = condQ,
+    out = list(estPars = estPars, pval = pval, yLowFreq = y, yDate = yDate, condVaR = condVaR,
                quantile = q, beta2para = beta2para, Solvers = c(MainSolver,SecondSolver),
                fval = fval, conv = convergeFlag)
   }

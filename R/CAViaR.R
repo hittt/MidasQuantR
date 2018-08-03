@@ -84,7 +84,7 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
  betaIni = GetIniParams_cav(y = y, x = x, q = q, model = model, empQuant = empQuant, Uni = Uni, 
                             numInitialsRand = numInitialsRand, numInitials = numInitials)
   #----- Estimate the paramters -----------
-  sol = .sol_cav(MainSolver = MainSolver,SecondSolver = SecondSolver,betaIni = betaIni,fun = CAViaRobjFun,
+  sol = .sol_cav(MainSolver = MainSolver,SecondSolver = SecondSolver,betaIni = betaIni,fun = objFun_cav,
              y = y, x = x,model = model,empQuant = empQuant,Uni = Uni, q = q,
              lb = lb, ub = ub, control = fitcontrol,warn = warn)
   #----- Preparing outputs and computing standard errors for estimated paramters-----
@@ -96,28 +96,28 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
   if(convergeFlag == 1){
     warnings("\nBoth Solvers failed to converge, try with other available solvers...\n")
     out = list(estPars = estPars, pval = NA, y = y, yDate = yDate, 
-               condQuantile = NA, quantile = q, Uni = Uni, Solvers = c(MainSolver,SecondSolver),
+               condVaR = NA, quantile = q, Uni = Uni, Solvers = c(MainSolver,SecondSolver),
                fval = fval, conv = convergeFlag, simpleRet = simpleRet,model = model)
   } else{
-    condQ = CAViaRcondQuant(params = estPars,yr = y,Xr = x,q = q,model = model,empQuant = empQuant,Uni = Uni)
+    condVaR = condVaR_cav(params = estPars,yr = y,Xr = x,model = model,empQuant = empQuant,Uni = Uni)
     if(GetSe){
-      VarCov = .VarCovarCaviaR(pars = estPars,model = model,y = y,x = x,q = q,condQ = condQ,Uni = Uni)
+      VarCov = .VarCovarCaviaR(pars = estPars,model = model,y = y,x = x,q = q,condVaR = condVaR,Uni = Uni)
       stdErr = sqrt(diag(VarCov))
       pval = pnorm(-abs(estPars)/stdErr)
     } else{
       stdErr = rep(NA,1,length(estPars))
       pval = rep(NA,1,length(estPars))
     }
-    out = list(estPars = estPars, pval = pval, yLowFreq = y, yDate = yDate, condQuantile = condQ,
+    out = list(estPars = estPars, pval = pval, yLowFreq = y, yDate = yDate, condVaR = condVaR,
                quantile = q, model = model,Uni = Uni, simpleRet = simpleRet, Solvers = c(MainSolver,SecondSolver),
                fval = fval, conv = convergeFlag)
   }
   return(out)
 }
 
-.VarCovarCaviaR <- function(pars, model, y, x, q, condQ,Uni){
+.VarCovarCaviaR <- function(pars, model, y, x, q, condVaR,Uni){
   T = length(y)
-  resid <- y - condQ
+  resid <- y - condVaR
   SortedRes <- sort(abs(resid))
   if(q == 0.01){
     k = 40; bandwidth = SortedRes[40]
@@ -143,7 +143,7 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
       for(i in 2:T){
         derivative1[i] = 1 + pars[1] * derivative1[i-1]
         derivative2[i] = pars[2] * derivative2[i-1] + abs(y[i-1])
-        derivative3[i] = pars[3] * derivative3[i-1] + condQ[i-1]
+        derivative3[i] = pars[3] * derivative3[i-1] + condVaR[i-1]
         gradient[i,] = c(derivative1[i],derivative2[i],derivative3[i])
         A = A + gradient[i,] %*% t(gradient[i,])
         if(abs(resid[i]) <= bandwidth){
@@ -157,7 +157,7 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
         derivative1[i] = 1 + pars[1] * derivative1[i-1]
         derivative2[i] = pars[2] * derivative2[i-1] + abs(y[i-1]) * (y[i-1] <= 0)
         derivative3[i] = pars[3] * derivative3[i-1] + abs(y[i-1]) * (y[i-1] > 0)
-        derivative4[i] = pars[4] * derivative4[i-1] + condQ[i-1]
+        derivative4[i] = pars[4] * derivative4[i-1] + condVaR[i-1]
         gradient[i,] = c(derivative1[i],derivative2[i],derivative3[i],derivative4[i])
         A = A + gradient[i,] %*% t(gradient[i,])
         if(abs(resid[i]) <= bandwidth){
@@ -174,7 +174,7 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
         derivative1[i] = 1 + pars[1] * derivative1[i-1]
         derivative2[i] = pars[2] * derivative2[i-1] + abs(y[i-1])
         derivative3[i] = pars[3] * derivative3[i-1] + x[i-1]
-        derivative4[i] = pars[4] * derivative4[i-1] + condQ[i-1]
+        derivative4[i] = pars[4] * derivative4[i-1] + condVaR[i-1]
         gradient[i,] = c(derivative1[i],derivative2[i],derivative3[i],derivative4[i])
         A = A + gradient[i,] %*% t(gradient[i,])
         if(abs(resid[i]) <= bandwidth){
@@ -189,7 +189,7 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
         derivative2[i] = pars[2] * derivative2[i-1] + abs(y[i-1]) * (y[i-1] <= 0)
         derivative3[i] = pars[3] * derivative3[i-1] + abs(y[i-1]) * (y[i-1] > 0)
         derivative4[i] = pars[4] * derivative4[i-1] + x[i-1]
-        derivative5[i] = pars[5] * derivative5[i-1] + condQ[i-1]
+        derivative5[i] = pars[5] * derivative5[i-1] + condVaR[i-1]
         gradient[i,] = c(derivative1[i],derivative2[i],derivative3[i],derivative4[i],derivative5[i])
         A = A + gradient[i,] %*% t(gradient[i,])
         if(abs(resid[i]) <= bandwidth){

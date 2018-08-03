@@ -57,7 +57,7 @@
   return(out)
 }
 
-.solverSwitch <- function(solver, pars, fun, control, lb, ub, y, condMean, x, x_neg, x_pos,
+.solverSwitch <- function(solver, pars, fun, control, lb, ub, y, condMean = NULL, x, x_neg, x_pos,
                        q, beta2para, As){
   control$rep = NULL
   if(!is.na(match(solver,c("L-BFGS-B","Nelder-Mead")))){
