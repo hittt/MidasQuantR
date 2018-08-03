@@ -45,10 +45,6 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
     if(is.na(match(SecondSolver,c("L-BFGS-B","bobyqa","nlminb","nmkb")))){
       stop("\nMidasQuantile-->error: only solver that allows for bounds can be used in case of constrained... \n")
     }
-  } else{
-    if(MainSolver == "nmkb") stop("\nMidasQuantile-->error: Solver nmk currentlys does not work in case of unconstrained... \n")
-    if(SecondSolver == "nmkb") stop("\nMidasQuantile-->error: Solver nmk currentlys does not work in case of unconstrained... \n")
-    
   }
   
   # The CAViaR model is sensitive to the choice of the empirical quantile to start the dynamics. Here, we use the empirical

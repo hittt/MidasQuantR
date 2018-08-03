@@ -45,10 +45,6 @@
     if(is.na(match(SecondSolver,c("L-BFGS-B","bobyqa","nlminb","nmkb")))){
       stop("\nMidasQuantile-->error: only solver that allows for bounds can be used in case of constrained... \n")
     }
-  } else{
-    if(MainSolver == "nmkb") stop("\nMidasQuantile-->error: Solver nmk currentlys does not work in case of unconstrained... \n")
-    if(SecondSolver == "nmkb") stop("\nMidasQuantile-->error: Solver nmk currentlys does not work in case of unconstrained... \n")
-    
   }
   
   # The CAViaR model is sensitive to the choice of the empirical quantile to start the dynamics. Here, we use the empirical
@@ -83,7 +79,7 @@
     UniQuantEst = CAViaR(y = y,yDate = yDate,x = x,xDate = xDate,q = q,horizon = 1,ovlap = FALSE,numInitialsRand = numInitialsRand,
                          numInitials = numInitials,empQuant = empQuant,GetSe = FALSE,Params = NULL,startPars = NULL,MainSolver = MainSolver,
                          SecondSolver = SecondSolver,model = model,fitcontrol = fitcontrol,warn = FALSE,simpleRet = simpleRet,
-                        constrained = FALSE,Uni = Uni)
+                        constrained = constrained,Uni = Uni)
     if(UniQuantEst$conv == 1){
       stop("\nCAViaR -->error: The univariate quantile does not converge, try other solvers.\n", call. = FALSE)
     }
