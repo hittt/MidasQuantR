@@ -2,26 +2,62 @@
 # Function to get the initial parameters to start the optimization
 #-----------------------
 
+#-------------------------------------------------------
+# Get initial parameters for the univariate midas quantile
+#-------------------------------------------------------
+
 #' @export
-GetIniParams <- function(y, X, X_neg, X_pos, q, numInitialsRand = 10000, 
+GetIniParams_midas <- function(y, X, X_neg, X_pos, q, numInitialsRand = 10000, 
                          numInitials = 10,beta2para = FALSE, As = FALSE){
   # Randomly sample second parameter of Beta polynomial
-  InitialParamsVec = GetIniParamsUni(y,X,X_neg, X_pos, q,numInitialsRand,numInitials,beta2para,As)
+  InitialParamsVec = C_GetIniParams_midas(y,X,X_neg, X_pos, q,numInitialsRand,beta2para,As)
   SortedResults = InitialParamsVec[order(InitialParamsVec[,1]),]
   beta = SortedResults[1:numInitials,2:(3 + As + beta2para + 1)]
   return(beta)
 }
 
+#------------------------------------------------------------
+# Get initial parameters for the midas quantile with AL distribution
+#------------------------------------------------------------
+
 #' @export
-GetIniParams_AL <- function(y, condMean, QuantEst, X, X_neg, X_pos, q,
+GetIniParamsAL_midas <- function(y, condMean, QuantEst, X, X_neg, X_pos, q,
                             numInitialsRand = 10000, numInitials = 10,
                             beta2para = FALSE, As = FALSE){
   # Randomly sample second parameter of Beta polynomial
-  InitialParamsVec = GetIniParamsAL(yr = y, condmeanR = condMean, QuantEst = QuantEst,
-                                    Xr = X, Xr_neg = X_neg,Xr_pos = X_pos, q = q,
-                                    numInitialsRand = numInitialsRand, numInitials = numInitials,
-                                    beta2para = beta2para, As = As)
-  SortedResults = InitialParamsVec#[order(InitialParamsVec[,1]),]
+  InitialParamsVec = C_GetIniParamsAL_midas(yr = y,condmeanR = condMean,QuantEst = QuantEst,Xr = X,Xr_neg = X_neg,
+                                            Xr_pos = X_pos,q = q,numInitialsRand = numInitialsRand,
+                                            beta2para = beta2para,As = As)
+  SortedResults = InitialParamsVec[order(InitialParamsVec[,1]),]
   beta = SortedResults[1:numInitials,2:(4 + As + beta2para + 1)]
+  return(beta)
+}
+
+#-------------------------------------------------------------
+# Get initial parameters for the CAViaR model
+#-------------------------------------------------------------
+#' @export
+
+GetIniParams_cav <- function(y,x, q, model, empQuant, Uni = TRUE, numInitialsRand = 10000, numInitials = 10){
+  InitialParamsVec = C_GetIniParams_cav(yr = y, Xr = x, q = q, model = model, empQuant = empQuant,
+                                        Uni = Uni, numInitialsRand = numInitialsRand)
+  SortedResults = InitialParamsVec[order(InitialParamsVec[,1]),]
+  beta = SortedResults[1:numInitials,2:(2 + model + 1)]
+  return(beta)
+}
+
+#------------------------------------------------------------
+# Get initial parameters for the CAV quantile with AL distribution
+#------------------------------------------------------------
+
+#' @export
+GetIniParamsAL_cav <- function(y, condMean, QuantEst, X, model, empQuant,q,
+                                 numInitialsRand = 10000, numInitials = 10,
+                                 Uni = TRUE){
+  # Randomly sample second parameter of Beta polynomial
+  InitialParamsVec = C_GetIniParamsAL_cav(yr = y,condmeanR = condMean,QuantEst = QuantEst,Xr = X,
+                                          q = q,numInitialsRand = numInitialsRand,model = model, empQuant = empQuant, Uni = Uni)
+  SortedResults = InitialParamsVec[order(InitialParamsVec[,1]),]
+  beta = SortedResults[1:numInitials,2:(2 + model + Uni + 1)]
   return(beta)
 }
