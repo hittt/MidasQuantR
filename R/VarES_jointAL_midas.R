@@ -98,7 +98,7 @@ VarEs_jointAL_midas <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
   convergeFlag = sol$convergence
   if(convergeFlag == 1){
     warnings("\nBoth Solvers failed to converge, try with other available solvers...\n")
-    out = list(estPars = estPars, pval = NA, yLowFreq = y, yDate = yDate, 
+    out = list(estPars = estPars, pval = NA, y = y, yDate = yDate, 
                condVaR = NA, condES = NA, quantile = q, beta2para = beta2para, Solvers = c(MainSolver,SecondSolver),
                fval = fval, conv = convergeFlag)
   } else{
@@ -139,7 +139,7 @@ VarEs_jointAL_midas <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
     } else{
       pval = rep(NA,length(estPars))
     }
-    out = list(estPars = estPars, pval = pval, yLowFreq = y, yDate = yDate, condVaR = condVaR,condES = condES,
+    out = list(estPars = estPars, pval = pval, y = y, yDate = yDate, condVaR = condVaR,condES = condES,
                quantile = q, beta2para = beta2para, Solvers = c(MainSolver,SecondSolver),
                fval = fval, conv = convergeFlag, meanEst = meanCoef)
   }
