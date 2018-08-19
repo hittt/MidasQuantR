@@ -57,7 +57,13 @@ MidasQuantile <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
   x_pos = x
   x_neg[yHigh > 0] = 0
   x_pos[yHigh <= 0] = 0
-  
+  #----- In case of known parameters, just computed the condVaR and return ----
+  if(!is.null(Params)){
+    condVaR = condVaR_midas(params = Params,Xr = x,Xr_neg = x_neg,Xr_pos = x_pos,beta2para = beta2para,As = As)
+    out = list(estPars = Params, pval = NaN, yLowFreq = y, yDate = yDate, condVaR = condVaR,
+               quantile = q, beta2para = beta2para, Solvers = NaN,
+               fval = NaN, conv = NaN)
+  } else{
   #----- Get the initial guess for the parameters-----
   betaIni = GetIniParams_midas(y = y, X = x,X_neg = x_neg,X_pos = x_pos, q = q, numInitialsRand = numInitialsRand,
                           numInitials = numInitials, beta2para = beta2para,As = As)
@@ -108,6 +114,7 @@ MidasQuantile <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
     out = list(estPars = estPars, pval = pval, yLowFreq = y, yDate = yDate, condVaR = condVaR,
                quantile = q, beta2para = beta2para, Solvers = c(MainSolver,SecondSolver),
                fval = fval, conv = convergeFlag)
+    }
   }
   return(out)
 }

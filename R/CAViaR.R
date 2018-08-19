@@ -41,6 +41,14 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
   # quantile of the first 10% of the data sample to start the quantile dynamics.
   if(is.null(empQuant)) empQuant = unname(quantile(y[1:round(0.10*length(y))],q))
   
+  #----- In case the parameters is known, just fit the conditional quantile and return-----
+  if(!is.null(Params)){
+    condVaR = condVaR_cav(params = Params,yr = y,Xr = x,As = As,empQuant = empQuant,Uni = Uni)
+    out = list(estPars = Params, pval = NaN, yLowFreq = y, yDate = yDate, condVaR = condVaR,
+               quantile = q, As = As,Uni = Uni, simpleRet = simpleRet, Solvers = NaN,
+               fval = NaN, conv = NaN)
+  } else{
+  #----- In case the paramters need to be estimated -----
   # Set the bounds for the parameters. The autoregressive paramter should be between 0 and 1?
   tol = 1e-10
   
@@ -75,6 +83,7 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
     out = list(estPars = estPars, pval = pval, yLowFreq = y, yDate = yDate, condVaR = condVaR,
                quantile = q, As = As,Uni = Uni, simpleRet = simpleRet, Solvers = c(MainSolver,SecondSolver),
                fval = fval, conv = convergeFlag)
+  }
   }
   return(out)
 }
