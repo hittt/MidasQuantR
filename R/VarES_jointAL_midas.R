@@ -5,11 +5,11 @@
 #' @importFrom lmtest coeftest
 
 #' @export VarEs_jointAL_midas
-VarEs_jointAL_midas <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
-                          armaOrder = NULL, horizon = 10, nlag = 100, ovlap = FALSE, numInitialsRand = 10000,
-                          numInitials = 10, GetSe = TRUE, GetSeSim = 200, Params = NULL, startPars = NULL,
-                          MainSolver = "ucminf",SecondSolver = "nmkb",As = FALSE,
-                          fitcontrol = list(rep = 5),beta2para = FALSE,warn = TRUE, simpleRet = FALSE){
+VarEs_jointAL_midas <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01, armaOrder = NULL, horizon = 10, 
+                                nlag = 100, ovlap = FALSE, numInitialsRand = 10000, numInitials = 10, 
+                                GetSe = TRUE, GetSeSim = 200, Params = NULL, PreMeanFit = NULL, startPars = NULL,
+                                MainSolver = "ucminf",SecondSolver = "nmkb",As = FALSE, fitcontrol = list(rep = 5),
+                                beta2para = FALSE,warn = TRUE, simpleRet = FALSE){
   #-- set up arguments ----
   if(length(yDate) != length(y))  stop("\nMidasQuantile-->error: Length of y and X should be the same\n")
   y[is.na(y)] = mean(y,na.rm = TRUE)
@@ -65,7 +65,15 @@ VarEs_jointAL_midas <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
   x_pos = x
   x_neg[yHigh > 0] = 0
   x_pos[yHigh <= 0] = 0
-  
+  #----------- If known parameteres, just compute condVaR and condES and return
+  if(!is.null(Params)){
+    VaRES = condVaRES_midas(params = Params, Xr = x, Xr_neg = x_neg, Xr_pos = x_pos,beta2para = beta2para,As = As)
+    condVaR = VaRES$VaR
+    condES = VaRES$ES
+    out = list(estPars = Params, pval = NaN, yLowFreq = y, yDate = yDate, condVaR = condVaR,condES = condES,
+               quantile = q, beta2para = beta2para, Solvers = NaN,
+               fval = NaN, conv = NaN, , meanFit = NaN)
+  } else{
   #------- Fit the conditional mean equation-------------
   if(is.null(armaOrder)){
     meanFit <- forecast::auto.arima(y, max.d = 0, max.D = 0)
@@ -141,7 +149,8 @@ VarEs_jointAL_midas <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
     }
     out = list(estPars = estPars, pval = pval, y = y, yDate = yDate, condVaR = condVaR,condES = condES,
                quantile = q, beta2para = beta2para, Solvers = c(MainSolver,SecondSolver),
-               fval = fval, conv = convergeFlag, meanEst = meanCoef)
+               fval = fval, conv = convergeFlag, , meanFit = meanFit)
+  }
   }
   return(out)
 }

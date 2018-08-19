@@ -5,11 +5,11 @@
 #' @importFrom lmtest coeftest
 
 #' @export VarEs_jointAL_cav
-  VarEs_jointAL_cav <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
-                       armaOrder = NULL, horizon = 10, ovlap = FALSE, numInitialsRand = 10000,
-                       numInitials = 10, GetSe = TRUE, GetSeSim = 200, Params = NULL, startPars = NULL,
-                       MainSolver = "ucminf",SecondSolver = "Nelder-Mead",As= FALSE,Uni = TRUE,empQuant = NULL,
-                       fitcontrol = list(rep = 5),warn = TRUE, simpleRet = FALSE){
+  VarEs_jointAL_cav <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01, armaOrder = NULL, horizon = 10, 
+                                ovlap = FALSE, numInitialsRand = 10000, numInitials = 10, GetSe = TRUE, 
+                                GetSeSim = 200, Params = NULL, startPars = NULL,
+                                MainSolver = "ucminf",SecondSolver = "Nelder-Mead",As= FALSE,Uni = TRUE,
+                                empQuant = NULL, fitcontrol = list(rep = 5),warn = TRUE, simpleRet = FALSE){
   nobs <- length(y)
   nobsShort = nobs-horizon+1
   yLowFreq = matrix(NA,ncol = 1, nrow = nobsShort)
@@ -41,6 +41,15 @@
   # quantile of the first 10% of the data sample to start the quantile dynamics.
   if(is.null(empQuant)) empQuant = unname(quantile(y[1:round(0.10*length(y))],q))
   
+  #------ In case of known parameters, just compute the condVaR and condES and return
+  if(!is.null(Params)){
+      VaRES = condVaRES_cav(params = Params, yr = y, Xr = x, empQuant = empQuant, As = As, Uni = Uni)
+      condVaR = VaRES$VaR
+      condES = VaRES$ES
+      out = list(estPars = Params, pval = NaN, yLowFreq = y, yDate = yDate, condES = condES,
+                 condVaR = condVaR, quantile = q, Uni = Uni, Solvers = NaN,
+                 fval = NaN, conv = NaN, simpleRet = simpleRet,As = As)
+  } else{
   # Set the bounds for the parameters. The autoregressive paramter should be between 0 and 1?
   tol = 1e-10
   if(is.null(startPars)){
@@ -85,11 +94,11 @@
   convergeFlag = sol$convergence
   if(convergeFlag == 1){
     warnings("\nBoth Solvers failed to converge, try with other available solvers...\n")
-    out = list(estPars = estPars, pval = NA, y = y, yDate = yDate, condES = NA,
+    out = list(estPars = estPars, pval = NA, yLowFreq = y, yDate = yDate, condES = NA,
                condVaR = NA, quantile = q, Uni = Uni, Solvers = c(MainSolver,SecondSolver),
-               fval = fval, conv = convergeFlag, simpleRet = simpleRet,As = As)
+               fval = fval, conv = convergeFlag, simpleRet = simpleRet,As = As, meanFit = meanFit)
   } else{
-    VaRES = condVaRES_cav(params = estPars, yr = y, Xr = x, condmeanR = condMean, empQuant = empQuant, As = As, Uni = Uni)
+    VaRES = condVaRES_cav(params = estPars, yr = y, Xr = x, empQuant = empQuant, As = As, Uni = Uni)
     betaIniSim = matrix(estPars,nrow = 1)
     condVaR = VaRES$VaR
     condES = VaRES$ES
@@ -126,9 +135,10 @@
     } else{
       pval = rep(NA,length(estPars))
     }
-    out = list(estPars = estPars, pval = pval, y = y, yDate = yDate, condES = condES,
+    out = list(estPars = estPars, pval = pval, yLowFreq = y, yDate = yDate, condES = condES,
                condVaR = condVaR, quantile = q, Uni = Uni, Solvers = c(MainSolver,SecondSolver),
-               fval = fval, conv = convergeFlag, simpleRet = simpleRet,As = As)
+               fval = fval, conv = convergeFlag, simpleRet = simpleRet,As = As, meanFit = meanFit)
+    }
   }
   return(out)
 }
