@@ -1,5 +1,5 @@
 #--------------------------------
-# MAIN FUNCTIONS: Estimate MIDAS quantile regression
+# MAIN FUNCTIONS: Estimate MIDAS quantile regression and ES using joint estimation with AL distribution
 #--------------------------------
 #' @importFrom forecast auto.arima Arima
 #' @importFrom lmtest coeftest

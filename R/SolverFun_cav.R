@@ -18,7 +18,7 @@
 # to solve the problem using the MainSolver, then using the solution (converge or not) to solve the problem. The solution of
 # the second solver is then used as initial parameters to resolve the problem. The use of multiple solvers is an attempt to 
 # get the global optimization. The process is repeated 10 times over 10 inital paramters guess (default)
-.sol_cav <- function(MainSolver,SecondSolver, betaIni, fun, control, y, x, model, q, empQuant, Uni = FALSE,
+.sol_cav <- function(MainSolver,SecondSolver, betaIni, fun, control, y, x, As, q, empQuant, Uni = FALSE,
                      warn = TRUE,condMean = NULL){
   rep = control$rep
   control$rep = NULL
@@ -27,11 +27,11 @@
   convCheck = 0;
   for(i in 1:N){
     for(ii in 1:rep){
-      sol = .solverSwitch_cav(MainSolver, betaIni[i,], fun, control, y, x, model, empQuant, Uni, q,condMean)
+      sol = .solverSwitch_cav(MainSolver, betaIni[i,], fun, control, y, x, As, empQuant, Uni, q,condMean)
       iniParsTemp = sol$par
-      sol = .solverSwitch_cav(SecondSolver, iniParsTemp, fun, control, y, x, model, empQuant, Uni, q,condMean)
+      sol = .solverSwitch_cav(SecondSolver, iniParsTemp, fun, control, y, x, As, empQuant, Uni, q,condMean)
       iniParsTemp = sol$par
-      sol = .solverSwitch_cav(MainSolver, iniParsTemp, fun, control, y, x, model, empQuant, Uni, q,condMean)
+      sol = .solverSwitch_cav(MainSolver, iniParsTemp, fun, control, y, x, As, empQuant, Uni, q,condMean)
       if(sol$convergence == 0) break
     }
     if(sol$convergence == 0){
@@ -57,34 +57,34 @@
   return(out)
 }
 
-.solverSwitch_cav <- function(solver, pars, fun, control, y, x, model, empQuant, Uni, q,condMean){
+.solverSwitch_cav <- function(solver, pars, fun, control, y, x, As, empQuant, Uni, q,condMean){
   if(!is.na(match(solver,c("L-BFGS-B","Nelder-Mead")))){
     control$method = solver
     solver = "optim"
   }
   control$rep = NULL
   solution = switch(solver,
-                 nmkb = .nmkbsolver_cav(pars, fun, control,  y, x, model, empQuant, Uni, q,condMean),
-                 optim = .optimsolver_cav(pars, fun, control,  y, x, model, empQuant, Uni, q,condMean),
-                 ucminf = .ucminfsolver_cav(pars, fun, control, y, x, model, empQuant, Uni, q,condMean),
-                 nlminb = .nlminbsolver_cav(pars, fun, control, y, x, model, empQuant, Uni, q,condMean),
-                 bobyqa = .bobyqasolver_cav(pars, fun, control, y, x, model, empQuant, Uni, q,condMean))
+                 nmkb = .nmkbsolver_cav(pars, fun, control,  y, x, As, empQuant, Uni, q,condMean),
+                 optim = .optimsolver_cav(pars, fun, control,  y, x, As, empQuant, Uni, q,condMean),
+                 ucminf = .ucminfsolver_cav(pars, fun, control, y, x, As, empQuant, Uni, q,condMean),
+                 nlminb = .nlminbsolver_cav(pars, fun, control, y, x, As, empQuant, Uni, q,condMean),
+                 bobyqa = .bobyqasolver_cav(pars, fun, control, y, x, As, empQuant, Uni, q,condMean))
   return(solution)
 }
 #-----------------
 # SOLVER MAIN FUNCTIONS
 #-----------------
 
-.nlminbsolver_cav = function (pars, fun, control, y, x, model, empQuant, Uni, q,condMean){
+.nlminbsolver_cav = function (pars, fun, control, y, x, As, empQuant, Uni, q,condMean){
   control$method = NULL
   control = .nlminb.ctrl(control)
   rep = 10
   if(is.null(condMean)){
     ans = try(nlminb(start = pars, objective = fun, control = control, yr = y, Xr = x, 
-                     model = model, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
+                     As = As, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
   } else{
     ans = try(nlminb(start = pars, objective = fun, control = control, yr = y, Xr = x, condmeanR = condMean,
-                     model = model, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
+                     As = As, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
   }
   
   pscale = rep(1, length(pars))
@@ -96,10 +96,10 @@
     pscale = 0.25*pscale
     if(is.null(condMean)){
       ans = try(nlminb(start = pars, objective = fun, control = control, yr = y, Xr = x, 
-                       model = model, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
+                       As = As, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
     } else{
       ans = try(nlminb(start = pars, objective = fun, control = control, yr = y, Xr = x, condmeanR = condMean,
-                       model = model, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
+                       As = As, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
     }
     maxtries = maxtries+1
   }
@@ -114,14 +114,14 @@
   return(sol = sol)
 }
 
-.ucminfsolver_cav = function(pars, fun, control, y, x, model, empQuant, Uni, q,condMean){
+.ucminfsolver_cav = function(pars, fun, control, y, x, As, empQuant, Uni, q,condMean){
   control = .ucminf.ctrl(control)
   if(is.null(condMean)){
     ans = try(ucminf(fn = fun, par = pars, control = control, yr = y, Xr = x, 
-                     model = model, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
+                     As = As, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
   } else{
     ans = try(ucminf(fn = fun, par = pars, control = control, yr = y, Xr = x,condmeanR = condMean,
-                     model = model, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
+                     As = As, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
   }
   if (inherits(ans, "try-error")) {
     sol = list()
@@ -134,23 +134,23 @@
 return(sol)
 }
 
-.optimsolver_cav = function(pars,  fun, control, y, x, model, empQuant, Uni, q,condMean){
+.optimsolver_cav = function(pars,  fun, control, y, x, As, empQuant, Uni, q,condMean){
   method = control$method
   control$method = NULL
   if(method == "L-BFGS-B"){
     if(is.null(condMean)){
-      ans = try(optim(fn = fun, par = pars, control = control, method = "L-BFGS-B",model = model,yr = y, Xr = x,gr = NULL,
+      ans = try(optim(fn = fun, par = pars, control = control, method = "L-BFGS-B",As = As,yr = y, Xr = x,gr = NULL,
                    empQuant = empQuant, Uni = Uni, q = q),silent = TRUE)
     }else{
-      ans = try(optim(fn = fun, par = pars, control = control, method = "L-BFGS-B",model = model,yr = y, Xr = x,gr = NULL,
+      ans = try(optim(fn = fun, par = pars, control = control, method = "L-BFGS-B",As = As,yr = y, Xr = x,gr = NULL,
                       empQuant = empQuant, Uni = Uni, q = q,condmeanR = condMean),silent = TRUE)
     }
    } else {
      if(is.null(condMean)){
-       ans = try(optim(fn = fun, par = pars, control = control, method = "Nelder-Mead",model = model,yr = y, Xr = x,gr = NULL,
+       ans = try(optim(fn = fun, par = pars, control = control, method = "Nelder-Mead",As = As,yr = y, Xr = x,gr = NULL,
                        empQuant = empQuant, Uni = Uni, q = q),silent = TRUE)
      }else{
-       ans = try(optim(fn = fun, par = pars, control = control, method = "Nelder-Mead",model = model,yr = y, Xr = x,gr = NULL,
+       ans = try(optim(fn = fun, par = pars, control = control, method = "Nelder-Mead",As = As,yr = y, Xr = x,gr = NULL,
                        empQuant = empQuant, Uni = Uni, q = q,condmeanR = condMean),silent = TRUE)
      }
   }
@@ -165,14 +165,14 @@ return(sol)
   return(sol)
 }
 
-.bobyqasolver_cav = function(pars, fun, control,  y, x, model, empQuant, Uni, q, condMean){
+.bobyqasolver_cav = function(pars, fun, control,  y, x, As, empQuant, Uni, q, condMean){
   control = .minqa.ctrl(control,pars)
   if(is.null(condMean)){
     ans = try(bobyqa(fn = fun, par = pars, control = control,yr = y, Xr = x,
-                     model = model, empQuant = empQuant, Uni = Uni, q = q),silent = TRUE)
+                     As = As, empQuant = empQuant, Uni = Uni, q = q),silent = TRUE)
   } else{
     ans = try(bobyqa(fn = fun, par = pars, control = control,yr = y, Xr = x,
-                     model = model, empQuant = empQuant, Uni = Uni, q = q,condmeanR = condMean),silent = TRUE)
+                     As = As, empQuant = empQuant, Uni = Uni, q = q,condmeanR = condMean),silent = TRUE)
   }
   if (inherits(ans, "try-error")) {
     sol = list()
@@ -189,14 +189,14 @@ return(sol)
   return(sol)
 }
 
-.nmkbsolver_cav = function(pars,  fun, control, y, x, model, empQuant, Uni, q,condMean){
+.nmkbsolver_cav = function(pars,  fun, control, y, x, As, empQuant, Uni, q,condMean){
   control = .dfoptim.ctrl(control)
   if(is.null(condMean)){
     ans = try(nmkb(fn = fun, par = pars, control = control, yr = y, 
-                 Xr = x, model = model, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
+                 Xr = x, As = As, empQuant = empQuant, Uni = Uni, q = q), silent = TRUE)
   } else{
     ans = try(nmkb(fn = fun, par = pars, control = control, yr = y, 
-                   Xr = x, model = model, empQuant = empQuant, Uni = Uni, q = q,condmeanR = condMean), silent = TRUE)
+                   Xr = x, As = As, empQuant = empQuant, Uni = Uni, q = q,condmeanR = condMean), silent = TRUE)
   }
   if (inherits(ans, "try-error")) {
     sol = list()

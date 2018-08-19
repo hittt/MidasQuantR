@@ -8,7 +8,7 @@
   VarEs_jointAL_cav <- function(y,yDate,x = NULL, xDate = NULL, q = 0.01,
                        armaOrder = NULL, horizon = 10, ovlap = FALSE, numInitialsRand = 10000,
                        numInitials = 10, GetSe = TRUE, GetSeSim = 200, Params = NULL, startPars = NULL,
-                       MainSolver = "ucminf",SecondSolver = "Nelder-Mead",model = 1,Uni = TRUE,empQuant = NULL,
+                       MainSolver = "ucminf",SecondSolver = "Nelder-Mead",As= FALSE,Uni = TRUE,empQuant = NULL,
                        fitcontrol = list(rep = 5),warn = TRUE, simpleRet = FALSE){
   nobs <- length(y)
   nobsShort = nobs-horizon+1
@@ -46,7 +46,7 @@
   if(is.null(startPars)){
     UniQuantEst = CAViaR(y = y,yDate = yDate,x = x,xDate = xDate,q = q,horizon = 1,ovlap = FALSE,numInitialsRand = numInitialsRand,
                          numInitials = numInitials,empQuant = empQuant,GetSe = FALSE,Params = NULL,startPars = NULL,MainSolver = MainSolver,
-                         SecondSolver = SecondSolver,model = model,fitcontrol = fitcontrol,warn = FALSE,simpleRet = simpleRet,
+                         SecondSolver = SecondSolver,As = As,fitcontrol = fitcontrol,warn = FALSE,simpleRet = simpleRet,
                          Uni = Uni)
     if(UniQuantEst$conv == 1){
       stop("\nCAViaR -->error: The univariate quantile does not converge, try other solvers.\n", call. = FALSE)
@@ -73,12 +73,12 @@
   
   #----- Get the initial guess for the parameters-----
   betaIni = GetIniParamsAL_cav(y = y, condMean = condMean, QuantEst = UniQuantEst$estPars, X = x, 
-                            q = q, numInitialsRand = numInitialsRand, model = model, empQuant = empQuant,
+                            q = q, numInitialsRand = numInitialsRand, As = As, empQuant = empQuant,
                             Uni = Uni)
   
   #----- Estimate the paramters -----------
   sol = .sol_cav(MainSolver = MainSolver,SecondSolver = SecondSolver,betaIni = betaIni,fun = objFunAL_cav,
-                 control = fitcontrol,y = y,x = x,model = model,q = q,empQuant = empQuant,
+                 control = fitcontrol,y = y,x = x,As = As,q = q,empQuant = empQuant,
                  Uni = Uni,condMean = condMean)
   estPars = sol$par
   fval = sol$value
@@ -87,20 +87,20 @@
     warnings("\nBoth Solvers failed to converge, try with other available solvers...\n")
     out = list(estPars = estPars, pval = NA, y = y, yDate = yDate, condES = NA,
                condVaR = NA, quantile = q, Uni = Uni, Solvers = c(MainSolver,SecondSolver),
-               fval = fval, conv = convergeFlag, simpleRet = simpleRet,model = model)
+               fval = fval, conv = convergeFlag, simpleRet = simpleRet,As = As)
   } else{
-    VaRES = condVaRES_cav(params = estPars, yr = y, Xr = x, condmeanR = condMean, empQuant = empQuant, model = model, Uni = Uni)
+    VaRES = condVaRES_cav(params = estPars, yr = y, Xr = x, condmeanR = condMean, empQuant = empQuant, As = As, Uni = Uni)
     betaIniSim = matrix(estPars,nrow = 1)
     condVaR = VaRES$VaR
     condES = VaRES$ES
     if(Uni){
-      if(model == 1){
+      if(!As){
         hypothesis = c(0,0,0,0) # intercept, absolute lag returns, autoregressive, phi
       } else{
         hypothesis = c(0,0,0,0,0)
       }
     } else{
-      if(model == 1){
+      if(!As){
         hypothesis = c(0,0,0,0,0)
       } else{
         hypothesis = c(0,0,0,0,0,0)
@@ -114,11 +114,11 @@
         residSim = sample(resid,size = length(resid),replace = TRUE)
         xSim = sample(x, size = length(x),replace = TRUE)
         NegResidMean = mean(residSim[residSim < 0])
-        ySim = cavSim(estPars, residSim, NegResidMean, y, condVaR, condES, model, Uni, xSim)
+        ySim = cavSim(estPars, residSim, NegResidMean, y, condVaR, condES, As, Uni, xSim)
         ySim_filter = forecast::Arima(ySim,order = meanFit$arma[1:3])
         condMeanSim <- as.numeric(ySim_filter$fitted)
         estSim = .solverSwitch_cav(solver = MainSolver, pars = estPars, fun = objFunAL_cav, control = fitcontrol,
-                                   model = model, y = ySim, x = xSim, empQuant = empQuant, Uni = Uni,
+                                   As = As, y = ySim, x = xSim, empQuant = empQuant, Uni = Uni,
                                    condMean = condMeanSim, q = q)
         parSim[,i] = estSim$par
       }
@@ -128,7 +128,7 @@
     }
     out = list(estPars = estPars, pval = pval, y = y, yDate = yDate, condES = condES,
                condVaR = condVaR, quantile = q, Uni = Uni, Solvers = c(MainSolver,SecondSolver),
-               fval = fval, conv = convergeFlag, simpleRet = simpleRet,model = model)
+               fval = fval, conv = convergeFlag, simpleRet = simpleRet,As = As)
   }
   return(out)
 }

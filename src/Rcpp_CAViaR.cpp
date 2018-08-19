@@ -6,13 +6,13 @@ using namespace Rcpp;
 //' @export
 // [[Rcpp::export]]
 double objFun_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVector Xr,
-                    double q, int model, double empQuant, bool Uni = true){
+                    double q, bool As, double empQuant, bool Uni = true){
   int T = yr.size();
   Rcpp::NumericVector condVaR(T);
   Rcpp::NumericVector absYr = Rcpp::abs(yr);
   condVaR[0] = empQuant;
   if(Uni){
-    if(model == 1){
+    if(!As){
       double beta0 = params[0]; // Intercept parameter
       double beta1 = params[1]; // Parameters with the lag absolute returns
       double beta2 = params[2]; // Autoregressive parameter
@@ -29,7 +29,7 @@ double objFun_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVect
       }
     }
   } else{
-    if(model == 1){
+    if(!As){
       double beta0 = params[0]; // Intercept parameter
       double beta1 = params[1]; // Parameters with the lag absolute returns
       double beta2 = params[2]; // Parameters for additional explanatory variable
@@ -65,13 +65,13 @@ double objFun_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVect
 //' @export
 // [[Rcpp::export]]
 Rcpp::NumericVector condVaR_cav(Rcpp::NumericVector params, Rcpp::NumericVector yr, Rcpp::NumericVector Xr,
-                                    int model, double empQuant, bool Uni = true){
+                                    bool As, double empQuant, bool Uni = true){
   int T = yr.size();
   Rcpp::NumericVector condVaR(T);
   Rcpp::NumericVector absYr = Rcpp::abs(yr);
   condVaR[0] = empQuant;
   if(Uni){
-    if(model == 1){
+    if(!As){
       double beta0 = params[0]; // Intercept parameter
       double beta1 = params[1]; // Parameters with the lag absolute returns
       double beta2 = params[2]; // Autoregressive parameter
@@ -88,7 +88,7 @@ Rcpp::NumericVector condVaR_cav(Rcpp::NumericVector params, Rcpp::NumericVector 
       }
     }
   } else{
-    if(model == 1){
+    if(!As){
       double beta0 = params[0]; // Intercept parameter
       double beta1 = params[1]; // Parameters with the lag absolute returns
       double beta2 = params[2]; // Parameters for additional explanatory variable
@@ -111,19 +111,19 @@ Rcpp::NumericVector condVaR_cav(Rcpp::NumericVector params, Rcpp::NumericVector 
 }
 
 // [[Rcpp::export]]
-NumericMatrix C_GetIniParams_cav(Rcpp::NumericVector yr, Rcpp::NumericVector Xr, double q, int model, 
+NumericMatrix C_GetIniParams_cav(Rcpp::NumericVector yr, Rcpp::NumericVector Xr, double q, bool As, 
                                  double empQuant, bool Uni = true, int numInitialsRand  = 10000){
   int numPars = 2;
   if(Uni){
-    numPars = numPars + model;
+    numPars = numPars + As + 1;
   } else{
-    numPars = numPars + model + 1;
+    numPars = numPars + As + 2;
   }
   NumericMatrix InitialParamesVec(numInitialsRand,numPars + 1);
   for(int i = 0; i < numInitialsRand; ++i){
     arma::colvec candidatePars = arma::join_cols(2 * arma::randu(numPars-1,1) - 1, arma::randu(1,1)); 
     // Generate random numbers uniformly distributed between (-1,1) and between (0, 1) for the autoregressive parameter
-    double fval = objFun_cav(candidatePars,yr,Xr,q,model,empQuant,Uni);
+    double fval = objFun_cav(candidatePars,yr,Xr,q,As,empQuant,Uni);
     NumericVector xx(numPars + 1);
     xx[0] = fval;
     std::copy(candidatePars.begin(),candidatePars.end(),xx.begin()+1);
@@ -141,7 +141,7 @@ NumericMatrix C_GetIniParams_cav(Rcpp::NumericVector yr, Rcpp::NumericVector Xr,
 // [[Rcpp::export]]
 double objFunAL_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVector Xr,
                     Rcpp::NumericVector condmeanR,double q, double empQuant,
-                      int model = false, bool Uni = false){
+                      bool As, bool Uni = false){
   int T = yr.size();
   arma::colvec condVaR(T);
   Rcpp::NumericVector absYr = Rcpp::abs(yr);
@@ -150,7 +150,7 @@ double objFunAL_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVe
   arma::colvec y(yr.begin(),yr.size(),false);
   double phi = 0;
   if(Uni){
-    if(model == 1){
+    if(!As){
       double beta0 = params[0]; // Intercept parameter
       double beta1 = params[1]; // Parameters with the lag absolute returns
       double beta2 = params[2]; // Autoregressive parameter
@@ -168,7 +168,7 @@ double objFunAL_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVe
       }
     }
   } else{
-    if(model == 1){
+    if(!As){
       double beta0 = params[0]; // Intercept parameter
       double beta1 = params[1]; // Parameters with the lag absolute returns
       double beta2 = params[2]; // Parameters for additional explanatory variable
@@ -206,7 +206,7 @@ double objFunAL_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVe
 // [[Rcpp::export]]
 Rcpp::List condVaRES_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVector Xr,
                            Rcpp::NumericVector condmeanR,double empQuant,
-                           int model = false, bool Uni = false){
+                           bool As, bool Uni = false){
   int T = yr.size();
   arma::colvec condVaR(T);
   Rcpp::NumericVector absYr = Rcpp::abs(yr);
@@ -215,7 +215,7 @@ Rcpp::List condVaRES_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::Nume
   arma::colvec y(yr.begin(),yr.size(),false);
   double phi = 0;
   if(Uni){
-    if(model == 1){
+    if(!As){
       double beta0 = params[0]; // Intercept parameter
       double beta1 = params[1]; // Parameters with the lag absolute returns
       double beta2 = params[2]; // Autoregressive parameter
@@ -233,7 +233,7 @@ Rcpp::List condVaRES_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::Nume
       }
     }
   } else{
-    if(model == 1){
+    if(!As){
       double beta0 = params[0]; // Intercept parameter
       double beta1 = params[1]; // Parameters with the lag absolute returns
       double beta2 = params[2]; // Parameters for additional explanatory variable
@@ -260,9 +260,9 @@ Rcpp::List condVaRES_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::Nume
 // [[Rcpp::export]]
 NumericMatrix C_GetIniParamsAL_cav(Rcpp::NumericVector yr, Rcpp::NumericVector Xr,
                                    Rcpp::NumericVector condmeanR, Rcpp::NumericVector QuantEst,
-                                   double q, double empQuant,int numInitialsRand, int model = false, bool Uni = false){
+                                   double q, double empQuant,int numInitialsRand, bool As, bool Uni = false){
   arma::colvec nInitalPhi = 3 * arma::randu(numInitialsRand) - 3;
-  int numPars = 2 + model + Uni + 1; 
+  int numPars = 2 + As + 1 + Uni + 1; 
   // Depends on the model specification, we will have different number of parameters; + 1 is for fval
   // Generate initial guess for the ES formulation based on Uniform distribution
   NumericMatrix  InitialParamsVec(numInitialsRand,numPars);
@@ -270,7 +270,7 @@ NumericMatrix C_GetIniParamsAL_cav(Rcpp::NumericVector yr, Rcpp::NumericVector X
     NumericVector xx(numPars-1);
     std::copy(QuantEst.begin(),QuantEst.end(),xx.begin());
     xx[numPars - 2] = nInitalPhi[i];
-    double fval = objFunAL_cav(xx,yr,Xr,condmeanR,q,empQuant,model,Uni);
+    double fval = objFunAL_cav(xx,yr,Xr,condmeanR,q,empQuant,As,Uni);
     NumericVector xxFull(numPars);
     xxFull[0] = fval;
     std::copy(xx.begin(),xx.end(),xxFull.begin()+1);
@@ -282,7 +282,7 @@ NumericMatrix C_GetIniParamsAL_cav(Rcpp::NumericVector yr, Rcpp::NumericVector X
 // [[Rcpp::export]]
 NumericVector cavSim(Rcpp::NumericVector params, Rcpp::NumericVector ResidSim, 
                      double NegResidMean, Rcpp::NumericVector y, Rcpp::NumericVector condVaR, 
-                     Rcpp::NumericVector condES, int model, bool Uni, Rcpp::NumericVector Xsim){
+                     Rcpp::NumericVector condES, bool As, bool Uni, Rcpp::NumericVector Xsim){
   int T = ResidSim.size();
   NumericVector ySim(T);
   NumericVector VaRsim(T);
@@ -293,7 +293,7 @@ NumericVector cavSim(Rcpp::NumericVector params, Rcpp::NumericVector ResidSim,
   ESsim[0] = condES[0];
   for(int i = 1; i < T; ++i){
     if(Uni){
-      if(model == 1){
+      if(!As){
         VaRsim[i] = params[0] + params[1] * absY[i-1] + params[2] * VaRsim[i-1];
         ESsim[i] = (1 + exp(params[3])) * VaRsim[i];
         double ySimDay = 0.0;
@@ -321,7 +321,7 @@ NumericVector cavSim(Rcpp::NumericVector params, Rcpp::NumericVector ResidSim,
         ySim[i] = ySimDay;
       }
     } else{
-      if(model == 1){
+      if(!As){
         VaRsim[i] = params[0] + params[1] * absY[i-1] + params[2] * Xsim[i-1] + params[3] * VaRsim[i-1];
         ESsim[i] = (1 + exp(params[4])) * VaRsim[i];
         double ySimDay = 0.0;

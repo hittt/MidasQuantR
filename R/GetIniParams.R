@@ -38,11 +38,11 @@ GetIniParamsAL_midas <- function(y, condMean, QuantEst, X, X_neg, X_pos, q,
 #-------------------------------------------------------------
 #' @export
 
-GetIniParams_cav <- function(y,x, q, model, empQuant, Uni = TRUE, numInitialsRand = 10000, numInitials = 10){
-  InitialParamsVec = C_GetIniParams_cav(yr = y, Xr = x, q = q, model = model, empQuant = empQuant,
+GetIniParams_cav <- function(y,x, q, As, empQuant, Uni = TRUE, numInitialsRand = 10000, numInitials = 10){
+  InitialParamsVec = C_GetIniParams_cav(yr = y, Xr = x, q = q, As = As, empQuant = empQuant,
                                         Uni = Uni, numInitialsRand = numInitialsRand)
   SortedResults = InitialParamsVec[order(InitialParamsVec[,1]),]
-  beta = SortedResults[1:numInitials,2:(2 + model + 1)]
+  beta = SortedResults[1:numInitials,2:(2 + As + 2)]
   return(beta)
 }
 
@@ -51,13 +51,13 @@ GetIniParams_cav <- function(y,x, q, model, empQuant, Uni = TRUE, numInitialsRan
 #------------------------------------------------------------
 
 #' @export
-GetIniParamsAL_cav <- function(y, condMean, QuantEst, X, model, empQuant,q,
+GetIniParamsAL_cav <- function(y, condMean, QuantEst, X, As, empQuant,q,
                                  numInitialsRand = 10000, numInitials = 10,
                                  Uni = TRUE){
   # Randomly sample second parameter of Beta polynomial
   InitialParamsVec = C_GetIniParamsAL_cav(yr = y,condmeanR = condMean,QuantEst = QuantEst,Xr = X,
-                                          q = q,numInitialsRand = numInitialsRand,model = model, empQuant = empQuant, Uni = Uni)
+                                          q = q,numInitialsRand = numInitialsRand,As = As, empQuant = empQuant, Uni = Uni)
   SortedResults = InitialParamsVec[order(InitialParamsVec[,1]),]
-  beta = SortedResults[1:numInitials,2:(2 + model + Uni + 1)]
+  beta = SortedResults[1:numInitials,2:(2 + As + 1 + Uni + 1)]
   return(beta)
 }

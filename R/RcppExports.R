@@ -2,35 +2,35 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' @export
-objFun_cav <- function(params, yr, Xr, q, model, empQuant, Uni = TRUE) {
-    .Call('_MidasQuantR_objFun_cav', PACKAGE = 'MidasQuantR', params, yr, Xr, q, model, empQuant, Uni)
+objFun_cav <- function(params, yr, Xr, q, As, empQuant, Uni = TRUE) {
+    .Call('_MidasQuantR_objFun_cav', PACKAGE = 'MidasQuantR', params, yr, Xr, q, As, empQuant, Uni)
 }
 
 #' @export
-condVaR_cav <- function(params, yr, Xr, model, empQuant, Uni = TRUE) {
-    .Call('_MidasQuantR_condVaR_cav', PACKAGE = 'MidasQuantR', params, yr, Xr, model, empQuant, Uni)
+condVaR_cav <- function(params, yr, Xr, As, empQuant, Uni = TRUE) {
+    .Call('_MidasQuantR_condVaR_cav', PACKAGE = 'MidasQuantR', params, yr, Xr, As, empQuant, Uni)
 }
 
-C_GetIniParams_cav <- function(yr, Xr, q, model, empQuant, Uni = TRUE, numInitialsRand = 10000L) {
-    .Call('_MidasQuantR_C_GetIniParams_cav', PACKAGE = 'MidasQuantR', yr, Xr, q, model, empQuant, Uni, numInitialsRand)
-}
-
-#' @export
-objFunAL_cav <- function(params, yr, Xr, condmeanR, q, empQuant, model = FALSE, Uni = FALSE) {
-    .Call('_MidasQuantR_objFunAL_cav', PACKAGE = 'MidasQuantR', params, yr, Xr, condmeanR, q, empQuant, model, Uni)
+C_GetIniParams_cav <- function(yr, Xr, q, As, empQuant, Uni = TRUE, numInitialsRand = 10000L) {
+    .Call('_MidasQuantR_C_GetIniParams_cav', PACKAGE = 'MidasQuantR', yr, Xr, q, As, empQuant, Uni, numInitialsRand)
 }
 
 #' @export
-condVaRES_cav <- function(params, yr, Xr, condmeanR, empQuant, model = FALSE, Uni = FALSE) {
-    .Call('_MidasQuantR_condVaRES_cav', PACKAGE = 'MidasQuantR', params, yr, Xr, condmeanR, empQuant, model, Uni)
+objFunAL_cav <- function(params, yr, Xr, condmeanR, q, empQuant, As, Uni = FALSE) {
+    .Call('_MidasQuantR_objFunAL_cav', PACKAGE = 'MidasQuantR', params, yr, Xr, condmeanR, q, empQuant, As, Uni)
 }
 
-C_GetIniParamsAL_cav <- function(yr, Xr, condmeanR, QuantEst, q, empQuant, numInitialsRand, model = FALSE, Uni = FALSE) {
-    .Call('_MidasQuantR_C_GetIniParamsAL_cav', PACKAGE = 'MidasQuantR', yr, Xr, condmeanR, QuantEst, q, empQuant, numInitialsRand, model, Uni)
+#' @export
+condVaRES_cav <- function(params, yr, Xr, condmeanR, empQuant, As, Uni = FALSE) {
+    .Call('_MidasQuantR_condVaRES_cav', PACKAGE = 'MidasQuantR', params, yr, Xr, condmeanR, empQuant, As, Uni)
 }
 
-cavSim <- function(params, ResidSim, NegResidMean, y, condVaR, condES, model, Uni, Xsim) {
-    .Call('_MidasQuantR_cavSim', PACKAGE = 'MidasQuantR', params, ResidSim, NegResidMean, y, condVaR, condES, model, Uni, Xsim)
+C_GetIniParamsAL_cav <- function(yr, Xr, condmeanR, QuantEst, q, empQuant, numInitialsRand, As, Uni = FALSE) {
+    .Call('_MidasQuantR_C_GetIniParamsAL_cav', PACKAGE = 'MidasQuantR', yr, Xr, condmeanR, QuantEst, q, empQuant, numInitialsRand, As, Uni)
+}
+
+cavSim <- function(params, ResidSim, NegResidMean, y, condVaR, condES, As, Uni, Xsim) {
+    .Call('_MidasQuantR_cavSim', PACKAGE = 'MidasQuantR', params, ResidSim, NegResidMean, y, condVaR, condES, As, Uni, Xsim)
 }
 
 #' @export

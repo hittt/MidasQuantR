@@ -5,7 +5,7 @@
 #' @export CAViaR
 CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap = FALSE, numInitialsRand = 10000, 
                    empQuant = NULL,numInitials = 10, GetSe = TRUE, Params = NULL, startPars = NULL,
-                   MainSolver = "ucminf",SecondSolver = "Nelder-Mead",model = 1,fitcontrol = list(rep = 5),
+                   MainSolver = "ucminf",SecondSolver = "Nelder-Mead",As = FALSE,fitcontrol = list(rep = 5),
                    warn = TRUE, simpleRet = FALSE, Uni = TRUE){
   #-- set up arguments ----
   
@@ -45,11 +45,11 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
   tol = 1e-10
   
   #----- Get the initial guess for the parameters-----
- betaIni = GetIniParams_cav(y = y, x = x, q = q, model = model, empQuant = empQuant, Uni = Uni, 
+ betaIni = GetIniParams_cav(y = y, x = x, q = q, As = As, empQuant = empQuant, Uni = Uni, 
                             numInitialsRand = numInitialsRand, numInitials = numInitials)
   #----- Estimate the paramters -----------
   sol = .sol_cav(MainSolver = MainSolver,SecondSolver = SecondSolver,betaIni = betaIni,fun = objFun_cav,
-             y = y, x = x,model = model,empQuant = empQuant,Uni = Uni, q = q,
+             y = y, x = x,As = As,empQuant = empQuant,Uni = Uni, q = q,
              control = fitcontrol,warn = warn)
   #----- Preparing outputs and computing standard errors for estimated paramters-----
   # For the CAViaR model, the standard errors are calculated using the code from Engle and Manganelli
@@ -61,11 +61,11 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
     warnings("\nBoth Solvers failed to converge, try with other available solvers...\n")
     out = list(estPars = estPars, pval = NA, y = y, yDate = yDate, 
                condVaR = NA, quantile = q, Uni = Uni, Solvers = c(MainSolver,SecondSolver),
-               fval = fval, conv = convergeFlag, simpleRet = simpleRet,model = model)
+               fval = fval, conv = convergeFlag, simpleRet = simpleRet,As = As)
   } else{
-    condVaR = condVaR_cav(params = estPars,yr = y,Xr = x,model = model,empQuant = empQuant,Uni = Uni)
+    condVaR = condVaR_cav(params = estPars,yr = y,Xr = x,As = As,empQuant = empQuant,Uni = Uni)
     if(GetSe){
-      VarCov = .VarCovarCaviaR(pars = estPars,model = model,y = y,x = x,q = q,condVaR = condVaR,Uni = Uni)
+      VarCov = .VarCovarCaviaR(pars = estPars,As = As,y = y,x = x,q = q,condVaR = condVaR,Uni = Uni)
       stdErr = sqrt(diag(VarCov))
       pval = pnorm(-abs(estPars)/stdErr)
     } else{
@@ -73,13 +73,13 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
       pval = rep(NA,1,length(estPars))
     }
     out = list(estPars = estPars, pval = pval, yLowFreq = y, yDate = yDate, condVaR = condVaR,
-               quantile = q, model = model,Uni = Uni, simpleRet = simpleRet, Solvers = c(MainSolver,SecondSolver),
+               quantile = q, As = As,Uni = Uni, simpleRet = simpleRet, Solvers = c(MainSolver,SecondSolver),
                fval = fval, conv = convergeFlag)
   }
   return(out)
 }
 
-.VarCovarCaviaR <- function(pars, model, y, x, q, condVaR,Uni){
+.VarCovarCaviaR <- function(pars, As, y, x, q, condVaR,Uni){
   T = length(y)
   resid <- y - condVaR
   SortedRes <- sort(abs(resid))
@@ -102,7 +102,7 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
   derivative3 = matrix(0,nrow = T, ncol = 1)
   derivative4 = matrix(0,nrow = T, ncol = 1)
   if(Uni){
-    if(model == 1){
+    if(!As){
       gradient = matrix(0,nrow = T, ncol = length(pars))
       for(i in 2:T){
         derivative1[i] = 1 + pars[1] * derivative1[i-1]
@@ -132,7 +132,7 @@ CAViaR <- function(y,yDate,x = NULL, xDate = NULL,q = 0.01,horizon = 10, ovlap =
     }
   } else{
     derivative5 = matrix(0,nrow = T, ncol = 1)
-    if(model == 1){
+    if(!As){
       gradient = matrix(0,nrow = T, ncol = length(pars))
       for(i in 2:T){
         derivative1[i] = 1 + pars[1] * derivative1[i-1]
