@@ -21,8 +21,8 @@ objFunAL_cav <- function(params, yr, Xr, condmeanR, q, empQuant, As, Uni = FALSE
 }
 
 #' @export
-condVaRES_cav <- function(params, yr, Xr, condmeanR, empQuant, As, Uni = FALSE) {
-    .Call('_MidasQuantR_condVaRES_cav', PACKAGE = 'MidasQuantR', params, yr, Xr, condmeanR, empQuant, As, Uni)
+condVaRES_cav <- function(params, yr, Xr, empQuant, As, Uni = FALSE) {
+    .Call('_MidasQuantR_condVaRES_cav', PACKAGE = 'MidasQuantR', params, yr, Xr, empQuant, As, Uni)
 }
 
 C_GetIniParamsAL_cav <- function(yr, Xr, condmeanR, QuantEst, q, empQuant, numInitialsRand, As, Uni = FALSE) {

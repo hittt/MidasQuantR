@@ -205,13 +205,11 @@ double objFunAL_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVe
 //' @export
 // [[Rcpp::export]]
 Rcpp::List condVaRES_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVector Xr,
-                           Rcpp::NumericVector condmeanR,double empQuant,
-                           bool As, bool Uni = false){
+                           double empQuant, bool As, bool Uni = false){
   int T = yr.size();
   arma::colvec condVaR(T);
   Rcpp::NumericVector absYr = Rcpp::abs(yr);
   condVaR[0] = empQuant;
-  arma::colvec mu(condmeanR.begin(),condmeanR.size(),false);
   arma::colvec y(yr.begin(),yr.size(),false);
   double phi = 0;
   if(Uni){

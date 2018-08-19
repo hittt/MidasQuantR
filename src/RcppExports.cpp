@@ -75,19 +75,18 @@ BEGIN_RCPP
 END_RCPP
 }
 // condVaRES_cav
-Rcpp::List condVaRES_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVector Xr, Rcpp::NumericVector condmeanR, double empQuant, bool As, bool Uni);
-RcppExport SEXP _MidasQuantR_condVaRES_cav(SEXP paramsSEXP, SEXP yrSEXP, SEXP XrSEXP, SEXP condmeanRSEXP, SEXP empQuantSEXP, SEXP AsSEXP, SEXP UniSEXP) {
+Rcpp::List condVaRES_cav(arma::colvec params, Rcpp::NumericVector yr, Rcpp::NumericVector Xr, double empQuant, bool As, bool Uni);
+RcppExport SEXP _MidasQuantR_condVaRES_cav(SEXP paramsSEXP, SEXP yrSEXP, SEXP XrSEXP, SEXP empQuantSEXP, SEXP AsSEXP, SEXP UniSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::colvec >::type params(paramsSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type yr(yrSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type Xr(XrSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type condmeanR(condmeanRSEXP);
     Rcpp::traits::input_parameter< double >::type empQuant(empQuantSEXP);
     Rcpp::traits::input_parameter< bool >::type As(AsSEXP);
     Rcpp::traits::input_parameter< bool >::type Uni(UniSEXP);
-    rcpp_result_gen = Rcpp::wrap(condVaRES_cav(params, yr, Xr, condmeanR, empQuant, As, Uni));
+    rcpp_result_gen = Rcpp::wrap(condVaRES_cav(params, yr, Xr, empQuant, As, Uni));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -255,7 +254,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MidasQuantR_condVaR_cav", (DL_FUNC) &_MidasQuantR_condVaR_cav, 6},
     {"_MidasQuantR_C_GetIniParams_cav", (DL_FUNC) &_MidasQuantR_C_GetIniParams_cav, 7},
     {"_MidasQuantR_objFunAL_cav", (DL_FUNC) &_MidasQuantR_objFunAL_cav, 8},
-    {"_MidasQuantR_condVaRES_cav", (DL_FUNC) &_MidasQuantR_condVaRES_cav, 7},
+    {"_MidasQuantR_condVaRES_cav", (DL_FUNC) &_MidasQuantR_condVaRES_cav, 6},
     {"_MidasQuantR_C_GetIniParamsAL_cav", (DL_FUNC) &_MidasQuantR_C_GetIniParamsAL_cav, 9},
     {"_MidasQuantR_cavSim", (DL_FUNC) &_MidasQuantR_cavSim, 9},
     {"_MidasQuantR_MidasBetaC", (DL_FUNC) &_MidasQuantR_MidasBetaC, 3},
