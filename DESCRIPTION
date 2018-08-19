@@ -9,5 +9,5 @@ Description: Perform quantile regression and expected shortfall estimation with 
 License: What license is it under?
 Imports: Rcpp (>= 0.12.17), forecast, lmtest
 LinkingTo: Rcpp, RcppArmadillo
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
 LazyData: true
